@@ -1,9 +1,9 @@
 {
-  "title": "MQ Solar Local",
+  "title": "MQ Solar Local by PATCoder97",
   "config": {
     "step": {
       "user": {
-        "title": "Add an MQ Solar Local device",
+        "title": "Add an MQ Solar Local by PATCoder97 device",
         "description": "Choose a local network setup method.",
         "menu_options": {
           "scan": "Scan local network",

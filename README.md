@@ -1,4 +1,6 @@
-# MQ Solar Local
+# MQ Solar Local by PATCoder97
+
+Phát triển và duy trì bởi [PATCoder97](https://github.com/PATCoder97).
 
 Custom integration Home Assistant chỉ giao tiếp trực tiếp với thiết bị trong
 mạng LAN. Repo này không chứa Cloud API, WebSocket, API token hoặc Device ID
@@ -90,7 +92,7 @@ Firmware `MPPT_WIFI_0905_v2.3.3.bin` đáp ứng hai endpoint MPPT.
 
 1. Mở **HACS → Integrations → Custom repositories**.
 2. Thêm URL GitHub của repo này với loại **Integration**.
-3. Tải **MQ Solar Local** và khởi động lại Home Assistant.
+3. Tải **MQ Solar Local by PATCoder97** và khởi động lại Home Assistant.
 
 Logo được đóng gói cục bộ trong integration và hiển thị từ Home Assistant
 2026.3 trở lên. Sau khi cập nhật, cần khởi động lại Home Assistant và có thể cần
@@ -101,7 +103,7 @@ refresh mạnh trình duyệt để xóa ảnh placeholder đã cache.
 Copy thư mục `custom_components/mqsolar_local` vào
 `/config/custom_components/mqsolar_local`, sau đó khởi động lại Home Assistant.
 
-Vào **Cài đặt → Thiết bị & Dịch vụ → Thêm tích hợp → MQ Solar Local** và chọn
+Vào **Cài đặt → Thiết bị & Dịch vụ → Thêm tích hợp → MQ Solar Local by PATCoder97** và chọn
 **Quét mạng nội bộ** hoặc **Nhập IP thủ công**.
 
 Nên cấu hình DHCP reservation cho module để IP không thay đổi.

@@ -1,9 +1,9 @@
 {
-  "title": "MQ Solar Local",
+  "title": "MQ Solar Local by PATCoder97",
   "config": {
     "step": {
       "user": {
-        "title": "Thêm thiết bị MQ Solar Local",
+        "title": "Thêm thiết bị MQ Solar Local by PATCoder97",
         "description": "Chọn cách cấu hình trong mạng nội bộ.",
         "menu_options": {
           "scan": "Quét mạng nội bộ",
