@@ -1,0 +1,90 @@
+{
+  "title": "Mạnh Quân Solar",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Thêm thiết bị Mạnh Quân Solar nội bộ",
+        "description": "Chọn cách cấu hình trong mạng nội bộ.",
+        "menu_options": {
+          "scan": "Quét mạng nội bộ",
+          "manual": "Nhập IP thủ công"
+        }
+      },
+      "manual": {
+        "title": "Nhập địa chỉ thiết bị",
+        "data": {"host": "Địa chỉ IP hoặc hostname"},
+        "data_description": {"host": "Địa chỉ LAN của module Wi-Fi."}
+      },
+      "scan": {
+        "title": "Chọn thiết bị tìm thấy",
+        "data": {"host": "Thiết bị"}
+      }
+    },
+    "error": {"cannot_connect": "Không thể kết nối tới thiết bị."},
+    "abort": {
+      "already_configured": "Thiết bị này đã được cấu hình.",
+      "no_devices_found": "Không tìm thấy thiết bị tương thích trong mạng nội bộ."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pv_voltage": {"name": "Điện áp PV"},
+      "pv_current": {"name": "Dòng PV"},
+      "battery_voltage": {"name": "Điện áp ắc quy"},
+      "battery_current": {"name": "Dòng ắc quy"},
+      "charging_power": {"name": "Công suất sạc"},
+      "energy_today": {"name": "Điện năng hôm nay"},
+      "energy_total": {"name": "Tổng điện năng"},
+      "temperature": {"name": "Nhiệt độ"},
+      "status": {"name": "Trạng thái"},
+      "dc_voltage": {"name": "Điện áp DC"},
+      "ac_voltage": {"name": "Điện áp AC"},
+      "output_power": {"name": "Công suất đầu ra"},
+      "grid_power": {"name": "Công suất lưới"},
+      "grid_today": {"name": "Điện lưới hôm nay"},
+      "grid_total": {"name": "Tổng điện lưới"},
+      "signal_quality": {"name": "Chất lượng sóng Wi-Fi"},
+      "esp_version": {"name": "Firmware Wi-Fi"},
+      "stm32_version": {"name": "Firmware điều khiển"},
+      "wifi_ip": {"name": "Địa chỉ IP"}
+    }
+  },
+  "services": {
+    "restart": {
+      "name": "Khởi động lại module Wi-Fi",
+      "description": "Khởi động lại module Wi-Fi ESP8266.",
+      "fields": {
+        "config_entry_id": {"name": "Thiết bị", "description": "Cấu hình Mạnh Quân Solar local cần điều khiển."},
+        "topic_code": {"name": "Mã topic MQTT", "description": "Giá trị topic trong cấu hình module; mặc định firmware là 45a."}
+      }
+    },
+    "reboot_charge": {
+      "name": "Khởi động lại bộ sạc",
+      "description": "Khởi động lại bộ điều khiển sạc STM32.",
+      "fields": {
+        "config_entry_id": {"name": "Thiết bị", "description": "Cấu hình Mạnh Quân Solar local cần điều khiển."},
+        "topic_code": {"name": "Mã topic MQTT", "description": "Giá trị topic trong cấu hình module; mặc định firmware là 45a."}
+      }
+    },
+    "get_charger_config": {
+      "name": "Đọc cấu hình sạc",
+      "description": "Yêu cầu cấu hình hiện tại và trả về phản hồi MQTT.",
+      "fields": {
+        "config_entry_id": {"name": "Thiết bị", "description": "Cấu hình Mạnh Quân Solar local cần đọc."},
+        "topic_code": {"name": "Mã topic MQTT", "description": "Giá trị topic trong cấu hình module; mặc định firmware là 45a."}
+      }
+    },
+    "set_charger_config": {
+      "name": "Ghi cấu hình sạc",
+      "description": "Ghi chế độ, dòng và áp sạc. Giá trị sai có thể làm hỏng ắc quy hoặc phần cứng.",
+      "fields": {
+        "config_entry_id": {"name": "Thiết bị", "description": "Cấu hình Mạnh Quân Solar local cần điều khiển."},
+        "topic_code": {"name": "Mã topic MQTT", "description": "Giá trị topic trong cấu hình module; mặc định firmware là 45a."},
+        "charge_mode": {"name": "Chế độ sạc", "description": "Giá trị chế độ firmware, 0 hoặc 1."},
+        "max_current": {"name": "Dòng tối đa", "description": "Dòng sạc tối đa tính bằng ampe."},
+        "max_voltage": {"name": "Điện áp tối đa", "description": "Điện áp sạc tối đa tính bằng vôn."},
+        "confirm": {"name": "Xác nhận", "description": "Xác nhận các giá trị an toàn với bộ sạc và ắc quy đang kết nối."}
+      }
+    }
+  }
+}

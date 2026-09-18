@@ -1,0 +1,90 @@
+{
+  "title": "Mạnh Quân Solar",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add a local Mạnh Quân Solar device",
+        "description": "Choose a local network setup method.",
+        "menu_options": {
+          "scan": "Scan local network",
+          "manual": "Enter IP address manually"
+        }
+      },
+      "manual": {
+        "title": "Enter device address",
+        "data": {"host": "IP address or hostname"},
+        "data_description": {"host": "The LAN address of the Wi-Fi module."}
+      },
+      "scan": {
+        "title": "Select a discovered device",
+        "data": {"host": "Device"}
+      }
+    },
+    "error": {"cannot_connect": "Unable to connect to the device."},
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "no_devices_found": "No compatible device was found on the local network."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pv_voltage": {"name": "PV voltage"},
+      "pv_current": {"name": "PV current"},
+      "battery_voltage": {"name": "Battery voltage"},
+      "battery_current": {"name": "Battery current"},
+      "charging_power": {"name": "Charging power"},
+      "energy_today": {"name": "Energy today"},
+      "energy_total": {"name": "Energy total"},
+      "temperature": {"name": "Temperature"},
+      "status": {"name": "Status"},
+      "dc_voltage": {"name": "DC voltage"},
+      "ac_voltage": {"name": "AC voltage"},
+      "output_power": {"name": "Output power"},
+      "grid_power": {"name": "Grid power"},
+      "grid_today": {"name": "Grid energy today"},
+      "grid_total": {"name": "Grid energy total"},
+      "signal_quality": {"name": "Wi-Fi signal quality"},
+      "esp_version": {"name": "Wi-Fi firmware"},
+      "stm32_version": {"name": "Controller firmware"},
+      "wifi_ip": {"name": "IP address"}
+    }
+  },
+  "services": {
+    "restart": {
+      "name": "Restart Wi-Fi module",
+      "description": "Restarts the ESP8266 Wi-Fi module.",
+      "fields": {
+        "config_entry_id": {"name": "Device", "description": "The local Mạnh Quân Solar config entry."},
+        "topic_code": {"name": "MQTT topic code", "description": "Topic value configured in the device MQTT settings; firmware default is 45a."}
+      }
+    },
+    "reboot_charge": {
+      "name": "Restart charger controller",
+      "description": "Restarts the STM32 charger controller.",
+      "fields": {
+        "config_entry_id": {"name": "Device", "description": "The local Mạnh Quân Solar config entry."},
+        "topic_code": {"name": "MQTT topic code", "description": "Topic value configured in the device MQTT settings; firmware default is 45a."}
+      }
+    },
+    "get_charger_config": {
+      "name": "Get charger configuration",
+      "description": "Requests the current charger configuration and returns its MQTT response.",
+      "fields": {
+        "config_entry_id": {"name": "Device", "description": "The local Mạnh Quân Solar config entry."},
+        "topic_code": {"name": "MQTT topic code", "description": "Topic value configured in the device MQTT settings; firmware default is 45a."}
+      }
+    },
+    "set_charger_config": {
+      "name": "Set charger configuration",
+      "description": "Writes charge mode, current and voltage to the charger controller. Incorrect values can damage the battery or hardware.",
+      "fields": {
+        "config_entry_id": {"name": "Device", "description": "The local Mạnh Quân Solar config entry."},
+        "topic_code": {"name": "MQTT topic code", "description": "Topic value configured in the device MQTT settings; firmware default is 45a."},
+        "charge_mode": {"name": "Charge mode", "description": "Firmware charge mode value, 0 or 1."},
+        "max_current": {"name": "Maximum current", "description": "Maximum charging current in amperes."},
+        "max_voltage": {"name": "Maximum voltage", "description": "Maximum charging voltage in volts."},
+        "confirm": {"name": "Confirm", "description": "Confirm that the values are safe for the connected charger and battery."}
+      }
+    }
+  }
+}
