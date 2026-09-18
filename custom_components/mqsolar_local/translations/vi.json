@@ -44,9 +44,18 @@
       "grid_today": {"name": "Điện lưới hôm nay"},
       "grid_total": {"name": "Tổng điện lưới"},
       "signal_quality": {"name": "Chất lượng sóng Wi-Fi"},
+      "wifi_rssi": {"name": "Cường độ Wi-Fi RSSI"},
+      "wifi_ssid": {"name": "Tên mạng Wi-Fi"},
       "esp_version": {"name": "Firmware Wi-Fi"},
       "stm32_version": {"name": "Firmware điều khiển"},
-      "wifi_ip": {"name": "Địa chỉ IP"}
+      "wifi_ip": {"name": "Địa chỉ IP"},
+      "mqtt_host": {"name": "Máy chủ MQTT"},
+      "mqtt_port": {"name": "Cổng MQTT"},
+      "mqtt_topic": {"name": "Topic MQTT"}
+    },
+    "binary_sensor": {
+      "mqtt_connected": {"name": "Kết nối MQTT"},
+      "mqtt_configured": {"name": "Đã cấu hình MQTT"}
     },
     "button": {
       "restart_wifi": {"name": "Khởi động lại Wi-Fi"},

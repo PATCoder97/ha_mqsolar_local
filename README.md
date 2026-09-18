@@ -14,6 +14,7 @@ Cloud.
 - Có entity nút reboot Wi-Fi, reboot bộ sạc và đọc cấu hình sạc.
 - Có entity chỉnh chế độ sạc, dòng tối đa và điện áp tối đa.
 - Nhận telemetry MQTT mỗi giây khi broker khả dụng; HTTP local vẫn là dự phòng.
+- Hiển thị chẩn đoán Wi-Fi SSID/RSSI và MQTT host/port/topic/trạng thái kết nối.
 
 ## Điều khiển MQTT local
 

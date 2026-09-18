@@ -36,38 +36,216 @@ class MQSolarSensorDescription(SensorEntityDescription):
 
     section: str | None = None
     status_key: bool = False
+    path: tuple[str, ...] | None = None
 
 
 CHARGER_SENSORS: tuple[MQSolarSensorDescription, ...] = (
-    MQSolarSensorDescription(key="pvVoltage", translation_key="pv_voltage", section="charger", native_unit_of_measurement=UnitOfElectricPotential.VOLT, device_class=SensorDeviceClass.VOLTAGE, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="pvCurrent", translation_key="pv_current", section="charger", native_unit_of_measurement=UnitOfElectricCurrent.AMPERE, device_class=SensorDeviceClass.CURRENT, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="batVoltage", translation_key="battery_voltage", section="charger", native_unit_of_measurement=UnitOfElectricPotential.VOLT, device_class=SensorDeviceClass.VOLTAGE, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="batCurrent", translation_key="battery_current", section="charger", native_unit_of_measurement=UnitOfElectricCurrent.AMPERE, device_class=SensorDeviceClass.CURRENT, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="chargingPower", translation_key="charging_power", section="charger", native_unit_of_measurement=UnitOfPower.WATT, device_class=SensorDeviceClass.POWER, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="powerToday", translation_key="energy_today", section="charger", native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL_INCREASING),
-    MQSolarSensorDescription(key="powerTotal", translation_key="energy_total", section="charger", native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL_INCREASING),
-    MQSolarSensorDescription(key="temperature", translation_key="temperature", section="charger", native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="statusText", translation_key="status", section="charger"),
+    MQSolarSensorDescription(
+        key="pvVoltage",
+        translation_key="pv_voltage",
+        section="charger",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="pvCurrent",
+        translation_key="pv_current",
+        section="charger",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="batVoltage",
+        translation_key="battery_voltage",
+        section="charger",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="batCurrent",
+        translation_key="battery_current",
+        section="charger",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="chargingPower",
+        translation_key="charging_power",
+        section="charger",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="powerToday",
+        translation_key="energy_today",
+        section="charger",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    MQSolarSensorDescription(
+        key="powerTotal",
+        translation_key="energy_total",
+        section="charger",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    MQSolarSensorDescription(
+        key="temperature",
+        translation_key="temperature",
+        section="charger",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="statusText", translation_key="status", section="charger"
+    ),
 )
 
 INVERTER_SENSORS: tuple[MQSolarSensorDescription, ...] = (
-    MQSolarSensorDescription(key="dcVoltage", translation_key="dc_voltage", section="inverter", native_unit_of_measurement=UnitOfElectricPotential.VOLT, device_class=SensorDeviceClass.VOLTAGE, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="acVoltage", translation_key="ac_voltage", section="inverter", native_unit_of_measurement=UnitOfElectricPotential.VOLT, device_class=SensorDeviceClass.VOLTAGE, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="outputPower", translation_key="output_power", section="inverter", native_unit_of_measurement=UnitOfPower.WATT, device_class=SensorDeviceClass.POWER, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="limiterPower", translation_key="grid_power", section="inverter", native_unit_of_measurement=UnitOfPower.WATT, device_class=SensorDeviceClass.POWER, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="limiterToday", translation_key="grid_today", section="inverter", native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL_INCREASING),
-    MQSolarSensorDescription(key="limiterTotal", translation_key="grid_total", section="inverter", native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL_INCREASING),
-    MQSolarSensorDescription(key="temperature", translation_key="temperature", section="inverter", native_unit_of_measurement=UnitOfTemperature.CELSIUS, device_class=SensorDeviceClass.TEMPERATURE, state_class=SensorStateClass.MEASUREMENT),
-    MQSolarSensorDescription(key="energyToday", translation_key="energy_today", section="inverter", native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL_INCREASING),
-    MQSolarSensorDescription(key="energyTotal", translation_key="energy_total", section="inverter", native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR, device_class=SensorDeviceClass.ENERGY, state_class=SensorStateClass.TOTAL_INCREASING),
-    MQSolarSensorDescription(key="statusText", translation_key="status", section="inverter"),
+    MQSolarSensorDescription(
+        key="dcVoltage",
+        translation_key="dc_voltage",
+        section="inverter",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="acVoltage",
+        translation_key="ac_voltage",
+        section="inverter",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="outputPower",
+        translation_key="output_power",
+        section="inverter",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="limiterPower",
+        translation_key="grid_power",
+        section="inverter",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="limiterToday",
+        translation_key="grid_today",
+        section="inverter",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    MQSolarSensorDescription(
+        key="limiterTotal",
+        translation_key="grid_total",
+        section="inverter",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    MQSolarSensorDescription(
+        key="temperature",
+        translation_key="temperature",
+        section="inverter",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+    ),
+    MQSolarSensorDescription(
+        key="energyToday",
+        translation_key="energy_today",
+        section="inverter",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    MQSolarSensorDescription(
+        key="energyTotal",
+        translation_key="energy_total",
+        section="inverter",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+    ),
+    MQSolarSensorDescription(
+        key="statusText", translation_key="status", section="inverter"
+    ),
 )
 
 DIAGNOSTIC_SENSORS: tuple[MQSolarSensorDescription, ...] = (
-    MQSolarSensorDescription(key="signalQuality", translation_key="signal_quality", status_key=True, native_unit_of_measurement=PERCENTAGE, entity_category=EntityCategory.DIAGNOSTIC),
-    MQSolarSensorDescription(key="espVersion", translation_key="esp_version", status_key=True, entity_category=EntityCategory.DIAGNOSTIC),
-    MQSolarSensorDescription(key="stm32Version", translation_key="stm32_version", status_key=True, entity_category=EntityCategory.DIAGNOSTIC),
-    MQSolarSensorDescription(key="wifiIP", translation_key="wifi_ip", status_key=True, entity_category=EntityCategory.DIAGNOSTIC),
+    MQSolarSensorDescription(
+        key="signalQuality",
+        translation_key="signal_quality",
+        status_key=True,
+        native_unit_of_measurement=PERCENTAGE,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="rssi",
+        translation_key="wifi_rssi",
+        status_key=True,
+        native_unit_of_measurement="dBm",
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="wifiSSID",
+        translation_key="wifi_ssid",
+        status_key=True,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="espVersion",
+        translation_key="esp_version",
+        status_key=True,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="stm32Version",
+        translation_key="stm32_version",
+        status_key=True,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="wifiIP",
+        translation_key="wifi_ip",
+        status_key=True,
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="mqttHost",
+        translation_key="mqtt_host",
+        path=("_status", "mqtt", "host"),
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="mqttPort",
+        translation_key="mqtt_port",
+        path=("_status", "mqtt", "port"),
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    MQSolarSensorDescription(
+        key="mqttTopic",
+        translation_key="mqtt_topic",
+        path=("_mqtt_topic_base",),
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
 )
 
 
@@ -78,7 +256,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up entities for one local device."""
     coordinator: MQSolarCoordinator = hass.data[DOMAIN][entry.entry_id]
-    measurements = CHARGER_SENSORS if "charger" in coordinator.data else INVERTER_SENSORS
+    measurements = (
+        CHARGER_SENSORS if "charger" in coordinator.data else INVERTER_SENSORS
+    )
     async_add_entities(
         MQSolarSensor(coordinator, description)
         for description in (*measurements, *DIAGNOSTIC_SENSORS)
@@ -114,6 +294,15 @@ class MQSolarSensor(CoordinatorEntity[MQSolarCoordinator], SensorEntity):
     def native_value(self) -> Any:
         """Return the latest local value."""
         description = self.entity_description
+        if description.path is not None:
+            value: Any = self.coordinator.data
+            for key in description.path:
+                if not isinstance(value, dict):
+                    return None
+                value = value.get(key)
+            return value
         if description.status_key:
             return self.coordinator.data.get("_status", {}).get(description.key)
-        return self.coordinator.data.get(description.section or "", {}).get(description.key)
+        return self.coordinator.data.get(description.section or "", {}).get(
+            description.key
+        )

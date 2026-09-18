@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
@@ -40,6 +41,8 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         data["charger"] = charger
         data["hasData"] = True
         data["_mqtt_topic_base"] = topic_base
+        data["_mqtt_last_seen_monotonic"] = time.monotonic()
+        data["_mqtt_connected"] = True
 
         status = dict(data.get("_status", {}))
         if "signalQuality" in payload:
@@ -61,9 +64,18 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # MQTT state is independent of the HTTP measurement payload.
             # Preserve it across HTTP refreshes.
             if self.data:
-                for key in ("_charger_config", "_mqtt_topic_base"):
+                for key in (
+                    "_charger_config",
+                    "_mqtt_topic_base",
+                    "_mqtt_last_seen_monotonic",
+                ):
                     if key in self.data:
                         data[key] = self.data[key]
+            last_seen = data.get("_mqtt_last_seen_monotonic")
+            data["_mqtt_connected"] = bool(
+                isinstance(last_seen, (int, float))
+                and time.monotonic() - last_seen < 10
+            )
             return data
         except MQSolarApiError as err:
             raise UpdateFailed(str(err)) from err

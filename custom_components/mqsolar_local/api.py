@@ -31,12 +31,16 @@ class MQSolarLocalApi:
     """Read data directly from one device over the LAN."""
 
     def __init__(self, host: str, session: ClientSession) -> None:
-        self.host = host.strip().removeprefix("http://").removeprefix("https://").rstrip("/")
+        self.host = (
+            host.strip().removeprefix("http://").removeprefix("https://").rstrip("/")
+        )
         self._session = session
         self._data_endpoint: str | None = None
         self.status: dict[str, Any] = {}
 
-    async def _get_json(self, path: str, timeout: int = REQUEST_TIMEOUT) -> dict[str, Any]:
+    async def _get_json(
+        self, path: str, timeout: int = REQUEST_TIMEOUT
+    ) -> dict[str, Any]:
         try:
             async with asyncio.timeout(timeout):
                 async with self._session.get(f"http://{self.host}{path}") as response:
@@ -53,7 +57,9 @@ class MQSolarLocalApi:
             raise MQSolarInvalidResponseError(f"Invalid JSON from {path}") from err
 
         if not isinstance(data, dict):
-            raise MQSolarInvalidResponseError(f"GET {path} did not return a JSON object")
+            raise MQSolarInvalidResponseError(
+                f"GET {path} did not return a JSON object"
+            )
         return data
 
     async def async_get_status(self, timeout: int = REQUEST_TIMEOUT) -> dict[str, Any]:
@@ -61,6 +67,8 @@ class MQSolarLocalApi:
         status = await self._get_json(API_STATUS, timeout)
         if not status.get("deviceId"):
             raise MQSolarInvalidResponseError("Status response has no deviceId")
+        if not status.get("stm32Version") and status.get("mcu_ver") is not None:
+            status["stm32Version"] = status["mcu_ver"]
         self.status = status
         return status
 
@@ -82,9 +90,11 @@ class MQSolarLocalApi:
         if "charger" not in normalized and "inverter" not in normalized:
             if "pvVoltage" in normalized or "pv_voltage" in normalized:
                 normalized = {"charger": data}
-            elif "dcVoltage" in normalized or "dc_voltage" in normalized:
-                normalized = {"inverter": data}
-            elif str(status.get("device_type")) == "1":
+            elif (
+                "dcVoltage" in normalized
+                or "dc_voltage" in normalized
+                or str(status.get("device_type")) == "1"
+            ):
                 normalized = {"inverter": data}
             else:
                 normalized = {"charger": data}
