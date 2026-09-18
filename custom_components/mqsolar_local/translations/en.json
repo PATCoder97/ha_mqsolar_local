@@ -47,6 +47,18 @@
       "esp_version": {"name": "Wi-Fi firmware"},
       "stm32_version": {"name": "Controller firmware"},
       "wifi_ip": {"name": "IP address"}
+    },
+    "button": {
+      "restart_wifi": {"name": "Restart Wi-Fi module"},
+      "reboot_charger": {"name": "Restart charger controller"},
+      "read_charger_config": {"name": "Read charger configuration"}
+    },
+    "number": {
+      "max_current": {"name": "Maximum charging current"},
+      "max_voltage": {"name": "Maximum charging voltage"}
+    },
+    "select": {
+      "charge_mode": {"name": "Charge mode"}
     }
   },
   "services": {

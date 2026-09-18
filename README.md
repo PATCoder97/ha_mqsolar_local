@@ -11,6 +11,8 @@ Cloud.
 - Poll dữ liệu local mỗi giây.
 - Hỗ trợ MPPT Charger và Grid-tie Inverter theo API firmware hiện có.
 - Không cần Internet sau khi cài đặt.
+- Có entity nút reboot Wi-Fi, reboot bộ sạc và đọc cấu hình sạc.
+- Có entity chỉnh chế độ sạc, dòng tối đa và điện áp tối đa.
 
 ## Điều khiển MQTT local
 
@@ -26,6 +28,11 @@ Home Assistant và module phải kết nối cùng MQTT broker. Firmware tạo c
 topic theo dạng `mppt_charger_<topic_code>/<deviceId>/cmd`; mã topic mặc định
 trong firmware v2.3.3 là `45a`. Nếu đã đổi trường `topic` qua
 `/api/mqtt/config`, hãy nhập đúng giá trị đó khi chạy action.
+
+Các ô chỉnh dòng, áp và chế độ chỉ khả dụng sau khi integration đọc được phản
+hồi `charger_config_sync`. Nhấn **Đọc cấu hình sạc** nếu chúng đang hiển thị
+Unavailable. Nút **Khởi động lại Wi-Fi** chỉ reboot ESP8266, không bật quyền
+chỉnh dòng sạc.
 
 Nếu module vẫn đang dùng broker Cloud mặc định, cấu hình nó sang broker MQTT nội
 bộ trước. Ví dụ PowerShell (request này làm module lưu cấu hình rồi reboot):

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
 import logging
+from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -31,6 +31,11 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            return await self.api.async_get_data()
+            data = await self.api.async_get_data()
+            # Charger configuration comes from MQTT, while measurements are
+            # polled over HTTP. Preserve it across HTTP refreshes.
+            if self.data and "_charger_config" in self.data:
+                data["_charger_config"] = self.data["_charger_config"]
+            return data
         except MQSolarApiError as err:
             raise UpdateFailed(str(err)) from err

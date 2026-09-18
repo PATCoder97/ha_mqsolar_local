@@ -5,10 +5,14 @@ from __future__ import annotations
 from typing import cast
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
@@ -28,22 +32,25 @@ from .const import (
     SERVICE_RESTART,
     SERVICE_SET_CHARGER_CONFIG,
 )
+from .control import async_refresh_config
 from .coordinator import MQSolarCoordinator
 from .mqtt_commands import (
-    async_get_charger_config,
     async_reboot_charge,
     async_restart,
     async_set_charger_config,
 )
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [
+    Platform.BUTTON,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+]
 
 BASE_COMMAND_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string,
-        vol.Optional(
-            ATTR_TOPIC_CODE, default=DEFAULT_MQTT_TOPIC_CODE
-        ): cv.string,
+        vol.Optional(ATTR_TOPIC_CODE, default=DEFAULT_MQTT_TOPIC_CODE): cv.string,
     }
 )
 
@@ -61,9 +68,7 @@ SET_CHARGER_CONFIG_SCHEMA = BASE_COMMAND_SCHEMA.extend(
 )
 
 
-def _coordinator_for_call(
-    hass: HomeAssistant, call: ServiceCall
-) -> MQSolarCoordinator:
+def _coordinator_for_call(hass: HomeAssistant, call: ServiceCall) -> MQSolarCoordinator:
     entry_id = call.data[ATTR_CONFIG_ENTRY_ID]
     entry = hass.config_entries.async_get_entry(entry_id)
     if entry is None or entry.domain != DOMAIN:
@@ -95,7 +100,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         )
 
     async def handle_get_charger_config(call: ServiceCall) -> ServiceResponse:
-        return await async_get_charger_config(
+        return await async_refresh_config(
             hass,
             _coordinator_for_call(hass, call),
             call.data[ATTR_TOPIC_CODE],

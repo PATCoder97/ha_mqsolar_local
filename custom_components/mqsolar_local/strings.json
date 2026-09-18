@@ -33,5 +33,40 @@
       "already_configured": "This device is already configured.",
       "no_devices_found": "No compatible device was found on the local network."
     }
+  },
+  "entity": {
+    "sensor": {
+      "pv_voltage": {"name": "PV voltage"},
+      "pv_current": {"name": "PV current"},
+      "battery_voltage": {"name": "Battery voltage"},
+      "battery_current": {"name": "Battery current"},
+      "charging_power": {"name": "Charging power"},
+      "energy_today": {"name": "Energy today"},
+      "energy_total": {"name": "Energy total"},
+      "temperature": {"name": "Temperature"},
+      "status": {"name": "Status"},
+      "dc_voltage": {"name": "DC voltage"},
+      "ac_voltage": {"name": "AC voltage"},
+      "output_power": {"name": "Output power"},
+      "grid_power": {"name": "Grid power"},
+      "grid_today": {"name": "Grid energy today"},
+      "grid_total": {"name": "Grid energy total"},
+      "signal_quality": {"name": "Wi-Fi signal quality"},
+      "esp_version": {"name": "Wi-Fi firmware"},
+      "stm32_version": {"name": "Controller firmware"},
+      "wifi_ip": {"name": "IP address"}
+    },
+    "button": {
+      "restart_wifi": {"name": "Restart Wi-Fi module"},
+      "reboot_charger": {"name": "Restart charger controller"},
+      "read_charger_config": {"name": "Read charger configuration"}
+    },
+    "number": {
+      "max_current": {"name": "Maximum charging current"},
+      "max_voltage": {"name": "Maximum charging voltage"}
+    },
+    "select": {
+      "charge_mode": {"name": "Charge mode"}
+    }
   }
 }

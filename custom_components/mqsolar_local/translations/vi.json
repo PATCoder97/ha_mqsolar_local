@@ -47,6 +47,18 @@
       "esp_version": {"name": "Firmware Wi-Fi"},
       "stm32_version": {"name": "Firmware điều khiển"},
       "wifi_ip": {"name": "Địa chỉ IP"}
+    },
+    "button": {
+      "restart_wifi": {"name": "Khởi động lại Wi-Fi"},
+      "reboot_charger": {"name": "Khởi động lại bộ sạc"},
+      "read_charger_config": {"name": "Đọc cấu hình sạc"}
+    },
+    "number": {
+      "max_current": {"name": "Dòng sạc tối đa"},
+      "max_voltage": {"name": "Điện áp sạc tối đa"}
+    },
+    "select": {
+      "charge_mode": {"name": "Chế độ sạc"}
     }
   },
   "services": {

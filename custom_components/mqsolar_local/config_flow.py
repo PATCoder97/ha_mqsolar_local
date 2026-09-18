@@ -7,7 +7,6 @@ import socket
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -45,17 +44,15 @@ async def _scan_network(hass: HomeAssistant) -> dict[str, dict[str, Any]]:
         host = f"{prefix}.{index}"
         async with semaphore:
             try:
-                status = await MQSolarLocalApi(host, session).async_get_status(SCAN_TIMEOUT)
+                status = await MQSolarLocalApi(host, session).async_get_status(
+                    SCAN_TIMEOUT
+                )
             except MQSolarApiError:
                 return None
         return host, status
 
     results = await asyncio.gather(*(check(index) for index in range(1, 255)))
-    return {
-        result[0]: result[1]
-        for result in results
-        if result is not None
-    }
+    return {result[0]: result[1] for result in results if result is not None}
 
 
 class MQSolarLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -63,15 +60,11 @@ class MQSolarLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> Any:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> Any:
         """Show the local-only setup methods."""
         return self.async_show_menu(step_id="user", menu_options=["scan", "manual"])
 
-    async def _create_entry(
-        self, host: str, status: dict[str, Any]
-    ) -> Any:
+    async def _create_entry(self, host: str, status: dict[str, Any]) -> Any:
         device_id = str(status["deviceId"])
         await self.async_set_unique_id(device_id)
         self._abort_if_unique_id_configured(updates={CONF_HOST: host})
@@ -80,9 +73,7 @@ class MQSolarLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             title=f"MQ {device_type} {device_id}", data={CONF_HOST: host}
         )
 
-    async def async_step_manual(
-        self, user_input: dict[str, Any] | None = None
-    ) -> Any:
+    async def async_step_manual(self, user_input: dict[str, Any] | None = None) -> Any:
         """Configure a device by IP address or hostname."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -100,9 +91,7 @@ class MQSolarLocalConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_scan(
-        self, user_input: dict[str, Any] | None = None
-    ) -> Any:
+    async def async_step_scan(self, user_input: dict[str, Any] | None = None) -> Any:
         """Scan the current /24 subnet and let the user choose a device."""
         if user_input is not None:
             host = user_input[CONF_HOST]
