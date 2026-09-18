@@ -29,7 +29,7 @@ base topic từ luồng dữ liệu MQTT theo Device ID rồi gửi lệnh vào 
 Thiết bị v2.3.3 đã kiểm tra thực tế với cấu hình `topic: 45a` sử dụng
 `45a_45a/<deviceId>/data` và `45a_45a/<deviceId>/cmd`, khác với prefix
 `mppt_charger` nhúng trong firmware. Nếu không thấy dữ liệu MQTT, integration mới
-dùng mẫu reverse-engineered làm fallback.
+dùng mẫu `topic_topic/<deviceId>` đã xác nhận trên MPPT v2.3.3 làm fallback.
 
 Các ô chỉnh dòng, áp và chế độ chỉ khả dụng sau khi integration đọc được phản
 hồi `charger_config_sync`. Nhấn **Đọc cấu hình sạc** nếu chúng đang hiển thị

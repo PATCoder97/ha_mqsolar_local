@@ -17,6 +17,12 @@ class ProtocolTest(unittest.TestCase):
             "mppt_charger_45a/CHG123456",
         )
 
+    def test_observed_v233_configured_topic(self) -> None:
+        self.assertEqual(
+            mqtt_topic_base("45a", "45a", "CHG14681307"),
+            "45a_45a/CHG14681307",
+        )
+
     def test_restart_payload(self) -> None:
         self.assertEqual(mqtt_command_payload("restart"), '{"command":"restart"}')
 

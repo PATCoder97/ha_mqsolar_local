@@ -28,8 +28,12 @@ def _device_topic_type(coordinator: MQSolarCoordinator) -> str:
     )
 
 
-def _topic_base(coordinator: MQSolarCoordinator, topic_code: str) -> str:
+def _fallback_topic_base(coordinator: MQSolarCoordinator, topic_code: str) -> str:
     device_id = coordinator.data["_device_id"]
+    if coordinator.data.get("_device_type") != "Inverter":
+        # Confirmed on MPPT Wi-Fi firmware v2.3.3 after /api/mqtt/config:
+        # topic "45a" publishes at 45a_45a/<deviceId>/data.
+        return mqtt_topic_base(topic_code, topic_code, device_id)
     return mqtt_topic_base(_device_topic_type(coordinator), topic_code, device_id)
 
 
@@ -73,7 +77,7 @@ async def _async_resolve_topic_base(
     except TimeoutError:
         # Retain the reverse-engineered prefix as a compatibility fallback for
         # devices that do not publish periodic telemetry.
-        topic_base = _topic_base(coordinator, topic_code)
+        topic_base = _fallback_topic_base(coordinator, topic_code)
     finally:
         unsubscribe()
 
