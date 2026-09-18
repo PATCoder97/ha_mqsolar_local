@@ -64,6 +64,7 @@ CHARGER_SENSORS: tuple[MQSolarSensorDescription, ...] = (
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
     ),
     MQSolarSensorDescription(
         key="batCurrent",
