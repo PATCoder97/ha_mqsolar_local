@@ -16,6 +16,13 @@ MQTT_CHARGER_FIELDS = {
     "temperature": "temperature",
 }
 
+STATUS_TEXT_MAP = {
+    "CHARGING": "Charging",
+    "UNKNOWN": "Not charging",
+    "FAULT_LOW": "Low voltage fault",
+    "FAULT_HIGH": "High voltage fault",
+}
+
 
 def mqtt_topic_base(device_type: str, topic_code: str, device_id: str) -> str:
     """Build the topic base used by firmware v2.3.3."""
@@ -37,6 +44,13 @@ def mqtt_charger_measurements(payload: dict[str, Any]) -> dict[str, Any]:
         for source, target in MQTT_CHARGER_FIELDS.items()
         if source in payload
     }
+
+
+def normalize_status_text(value: Any) -> str | None:
+    """Return readable English text for a firmware charger status."""
+    if value is None:
+        return None
+    return STATUS_TEXT_MAP.get(str(value).strip().upper(), "Unknown")
 
 
 def mqtt_command_payload(command: str, parameter: dict[str, Any] | None = None) -> str:

@@ -62,6 +62,19 @@ Invoke-RestMethod `
   -Body $body
 ```
 
+Trên SSH/Linux, có thể cấu hình bằng một lệnh `curl`:
+
+```bash
+curl --connect-timeout 5 --max-time 15 -X POST \
+  "http://DEVICE_IP/api/mqtt/config" \
+  -H "Content-Type: application/json" \
+  -d '{"host":"MQTT_BROKER_IP","port":1883,"user":"MQTT_USER","pass":"MQTT_PASSWORD","topic":"45a"}'
+```
+
+Thay `DEVICE_IP`, `MQTT_BROKER_IP`, `MQTT_USER` và `MQTT_PASSWORD` bằng thông
+tin thực tế. Không sao chép dấu nhắc `$` hoặc `>` của terminal. Module sẽ lưu cấu
+hình và tự khởi động lại sau khi trả về `MQTT saved! Restarting...`.
+
 Ví dụ:
 
 ```yaml

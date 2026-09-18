@@ -28,6 +28,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import MQSolarCoordinator
+from .protocol import normalize_status_text
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -303,6 +304,9 @@ class MQSolarSensor(CoordinatorEntity[MQSolarCoordinator], SensorEntity):
             return value
         if description.status_key:
             return self.coordinator.data.get("_status", {}).get(description.key)
-        return self.coordinator.data.get(description.section or "", {}).get(
+        value = self.coordinator.data.get(description.section or "", {}).get(
             description.key
         )
+        if description.key == "statusText":
+            return normalize_status_text(value)
+        return value

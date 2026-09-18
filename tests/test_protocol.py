@@ -8,6 +8,7 @@ from custom_components.mqsolar_local.protocol import (
     mqtt_command_payload,
     mqtt_discovered_topic_base,
     mqtt_topic_base,
+    normalize_status_text,
 )
 
 
@@ -62,6 +63,14 @@ class ProtocolTest(unittest.TestCase):
                 },
             },
         )
+
+    def test_normalize_status_text(self) -> None:
+        self.assertEqual(normalize_status_text("CHARGING"), "Charging")
+        self.assertEqual(normalize_status_text("UNKNOWN"), "Not charging")
+        self.assertEqual(normalize_status_text("FAULT_LOW"), "Low voltage fault")
+        self.assertEqual(normalize_status_text("FAULT_HIGH"), "High voltage fault")
+        self.assertEqual(normalize_status_text("new_state"), "Unknown")
+        self.assertIsNone(normalize_status_text(None))
 
 
 if __name__ == "__main__":
