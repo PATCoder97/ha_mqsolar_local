@@ -15,7 +15,8 @@ Cloud.
 - Không cần Internet sau khi cài đặt.
 - Có entity nút reboot Wi-Fi, reboot bộ sạc và đọc cấu hình sạc.
 - Có entity chỉnh chế độ sạc, dòng tối đa và điện áp tối đa.
-- Nhận telemetry MQTT mỗi giây khi broker khả dụng; HTTP local vẫn là dự phòng.
+- Nhận telemetry MQTT của MPPT khi broker khả dụng; HTTP local vẫn là dự phòng.
+- Inverter hiện đọc dữ liệu qua HTTP; chưa áp dụng ánh xạ MQTT của MPPT cho inverter.
 - Hiển thị chẩn đoán Wi-Fi SSID/RSSI và MQTT host/port/topic/trạng thái kết nối.
 
 ## Điều khiển MQTT local
@@ -91,6 +92,23 @@ data:
 Các giới hạn `200 A` và `100 V` trong form chỉ là giới hạn kỹ thuật để chặn dữ
 liệu bất thường, không phải thông số an toàn của phần cứng. Người dùng phải chọn
 giá trị phù hợp với model bộ sạc và ắc quy.
+
+## Thay đổi 1.3.4
+
+- Điện áp ắc quy đề xuất hiển thị 2 chữ số thập phân; không làm tròn dữ liệu gốc.
+- Các thao tác ghi cấu hình dùng chung khóa, đọc lại cấu hình trước khi ghi để
+  tránh gửi kèm giá trị cũ. Action và các entity dùng cùng luồng xử lý.
+- Sau khi gửi, đọc lại tối đa 3 lần để xác nhận. Chỉ hiển thị cấu hình đọc được;
+  báo lỗi nếu không khớp, vô hiệu hóa cấu hình lưu nếu không đọc được phản hồi.
+  Lỗi xác nhận không có nghĩa là thiết bị chưa áp dụng lệnh; hãy đọc lại cấu hình
+  trước khi thử lại. Integration không tự gửi lại lệnh ghi.
+- Kiểm tra giới hạn thiết bị khi có phản hồi và loại bỏ số không hợp lệ. Giới hạn
+  thiết bị không thay thế việc chọn thông số an toàn cho loại pin đang dùng.
+- Chuẩn hóa tên trường HTTP dạng snake_case; không hiển thị số đo khi hasData=false.
+- MQTT inverter chưa được xác minh, vì vậy giữ đường đọc HTTP.
+
+Kiểm thử logic không cần cài Home Assistant: `python -m unittest discover -s tests -v`.
+Các test cô lập không thay thế kiểm thử integration trên Home Assistant và thiết bị thật.
 
 ## Yêu cầu firmware
 

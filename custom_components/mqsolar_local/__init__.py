@@ -33,12 +33,11 @@ from .const import (
     SERVICE_RESTART,
     SERVICE_SET_CHARGER_CONFIG,
 )
-from .control import async_refresh_config
+from .control import async_refresh_config, async_write_config
 from .coordinator import MQSolarCoordinator
 from .mqtt_commands import (
     async_reboot_charge,
     async_restart,
-    async_set_charger_config,
     async_subscribe_telemetry,
 )
 
@@ -112,7 +111,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         )
 
     async def handle_set_charger_config(call: ServiceCall) -> None:
-        await async_set_charger_config(
+        await async_write_config(
             hass,
             _coordinator_for_call(hass, call),
             call.data[ATTR_TOPIC_CODE],

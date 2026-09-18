@@ -6,6 +6,7 @@ import asyncio
 from typing import Any
 
 from aiohttp import ClientError, ClientSession
+from .protocol import MQTT_CHARGER_FIELDS
 
 from .const import (
     API_CHARGER_DATA,
@@ -100,6 +101,25 @@ class MQSolarLocalApi:
                 normalized = {"charger": data}
 
         device_type = "Inverter" if "inverter" in normalized else "Charger"
+        aliases = dict(MQTT_CHARGER_FIELDS)
+        aliases.update({
+            "dc_voltage": "dcVoltage", "ac_voltage": "acVoltage",
+            "output_power": "outputPower", "limiter_power": "limiterPower",
+            "limiter_today": "limiterToday", "limiter_total": "limiterTotal",
+            "energy_today": "energyToday", "energy_total": "energyTotal",
+            "status_text": "statusText",
+        })
+        for section in ("charger", "inverter"):
+            if section not in normalized:
+                continue
+            values = normalized[section]
+            if not isinstance(values, dict):
+                raise MQSolarInvalidResponseError(f"Invalid {section} measurements")
+            values = dict(values)
+            for source, target in aliases.items():
+                if source in values and target not in values:
+                    values[target] = values[source]
+            normalized[section] = values
         normalized["_device_id"] = str(status.get("deviceId", "unknown"))
         normalized["_device_type"] = device_type
         normalized["_status"] = status

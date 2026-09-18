@@ -1,15 +1,21 @@
 """Tests for the MQTT format extracted from firmware v2.3.3."""
 
 import json
+import importlib.util
+from pathlib import Path
 import unittest
 
-from custom_components.mqsolar_local.protocol import (
-    mqtt_charger_measurements,
-    mqtt_command_payload,
-    mqtt_discovered_topic_base,
-    mqtt_topic_base,
-    normalize_status_text,
+# Load the pure helper without executing the HA-dependent package __init__.
+spec = importlib.util.spec_from_file_location(
+    "mq_protocol", Path(__file__).parents[1] / "custom_components/mqsolar_local/protocol.py"
 )
+protocol = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(protocol)
+mqtt_charger_measurements = protocol.mqtt_charger_measurements
+mqtt_command_payload = protocol.mqtt_command_payload
+mqtt_discovered_topic_base = protocol.mqtt_discovered_topic_base
+mqtt_topic_base = protocol.mqtt_topic_base
+normalize_status_text = protocol.normalize_status_text
 
 
 class ProtocolTest(unittest.TestCase):

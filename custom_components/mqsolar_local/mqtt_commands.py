@@ -28,6 +28,11 @@ async def async_subscribe_telemetry(
     """Subscribe to live MQTT measurements for this device."""
     device_id = str(coordinator.data["_device_id"])
 
+    # The verified telemetry mapping is charger-only. Do not inject charger
+    # measurements into an inverter coordinator.
+    if coordinator.data.get("_device_type") == "Inverter":
+        return lambda: None
+
     async def message_received(message: Any) -> None:
         try:
             payload = json.loads(message.payload)
@@ -161,6 +166,8 @@ async def async_get_charger_config(
 
     async def message_received(message: Any) -> None:
         if response.done():
+            return
+        if getattr(message, "retain", False):
             return
         try:
             data = json.loads(message.payload)

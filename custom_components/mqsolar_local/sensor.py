@@ -305,6 +305,8 @@ class MQSolarSensor(CoordinatorEntity[MQSolarCoordinator], SensorEntity):
             return value
         if description.status_key:
             return self.coordinator.data.get("_status", {}).get(description.key)
+        if not self.coordinator.data.get("hasData", True):
+            return None
         value = self.coordinator.data.get(description.section or "", {}).get(
             description.key
         )

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import Callable
@@ -30,11 +31,14 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=timedelta(seconds=UPDATE_INTERVAL_SECONDS),
         )
         self.host = host
+        self.config_lock = asyncio.Lock()
         self.api = MQSolarLocalApi(host, async_get_clientsession(hass))
         self.mqtt_unsubscribe: Callable[[], None] | None = None
 
     def async_set_mqtt_data(self, payload: dict[str, Any], topic_base: str) -> None:
         """Merge one live MQTT telemetry payload into coordinator data."""
+        if self.data.get("_device_type") == "Inverter":
+            return
         data = dict(self.data)
         charger = dict(data.get("charger", {}))
         charger.update(mqtt_charger_measurements(payload))
