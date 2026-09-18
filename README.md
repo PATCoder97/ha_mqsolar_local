@@ -13,6 +13,7 @@ Cloud.
 - Không cần Internet sau khi cài đặt.
 - Có entity nút reboot Wi-Fi, reboot bộ sạc và đọc cấu hình sạc.
 - Có entity chỉnh chế độ sạc, dòng tối đa và điện áp tối đa.
+- Nhận telemetry MQTT mỗi giây khi broker khả dụng; HTTP local vẫn là dự phòng.
 
 ## Điều khiển MQTT local
 
@@ -35,6 +36,9 @@ Các ô chỉnh dòng, áp và chế độ chỉ khả dụng sau khi integratio
 hồi `charger_config_sync`. Nhấn **Đọc cấu hình sạc** nếu chúng đang hiển thị
 Unavailable. Nút **Khởi động lại Wi-Fi** chỉ reboot ESP8266, không bật quyền
 chỉnh dòng sạc.
+
+Ba chế độ sạc xác nhận từ giao diện firmware là `0` (Pin Lithium), `1` (Ắc quy
+chì-axit) và `2` (Nguồn Inverter).
 
 Nếu module vẫn đang dùng broker Cloud mặc định, cấu hình nó sang broker MQTT nội
 bộ trước. Ví dụ PowerShell (request này làm module lưu cấu hình rồi reboot):

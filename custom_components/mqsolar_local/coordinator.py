@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from datetime import timedelta
 from typing import Any
 
@@ -12,6 +13,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import MQSolarApiError, MQSolarLocalApi
 from .const import UPDATE_INTERVAL_SECONDS
+from .protocol import mqtt_charger_measurements
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,6 +30,30 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self.host = host
         self.api = MQSolarLocalApi(host, async_get_clientsession(hass))
+        self.mqtt_unsubscribe: Callable[[], None] | None = None
+
+    def async_set_mqtt_data(self, payload: dict[str, Any], topic_base: str) -> None:
+        """Merge one live MQTT telemetry payload into coordinator data."""
+        data = dict(self.data)
+        charger = dict(data.get("charger", {}))
+        charger.update(mqtt_charger_measurements(payload))
+        data["charger"] = charger
+        data["hasData"] = True
+        data["_mqtt_topic_base"] = topic_base
+
+        status = dict(data.get("_status", {}))
+        if "signalQuality" in payload:
+            status["signalQuality"] = payload["signalQuality"]
+        if "firmwareVersion" in payload:
+            status["espVersion"] = payload["firmwareVersion"]
+        data["_status"] = status
+        self.async_set_updated_data(data)
+
+    def async_unsubscribe_mqtt(self) -> None:
+        """Stop the MQTT telemetry subscription."""
+        if self.mqtt_unsubscribe is not None:
+            self.mqtt_unsubscribe()
+            self.mqtt_unsubscribe = None
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:

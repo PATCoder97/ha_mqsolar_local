@@ -4,6 +4,7 @@ import json
 import unittest
 
 from custom_components.mqsolar_local.protocol import (
+    mqtt_charger_measurements,
     mqtt_command_payload,
     mqtt_discovered_topic_base,
     mqtt_topic_base,
@@ -35,6 +36,14 @@ class ProtocolTest(unittest.TestCase):
     def test_discovered_topic_rejects_another_device(self) -> None:
         self.assertIsNone(
             mqtt_discovered_topic_base("45a_45a/CHG00000000/data", "CHG14681307")
+        )
+
+    def test_mqtt_charger_measurements(self) -> None:
+        self.assertEqual(
+            mqtt_charger_measurements(
+                {"pv_voltage": 40.3, "bat_current": 0.478, "ignored": 1}
+            ),
+            {"pvVoltage": 40.3, "batCurrent": 0.478},
         )
 
     def test_set_charger_config_payload(self) -> None:

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import cast
 
 import voluptuous as vol
@@ -13,7 +14,7 @@ from homeassistant.core import (
     ServiceResponse,
     SupportsResponse,
 )
-from homeassistant.exceptions import ServiceValidationError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
@@ -38,7 +39,10 @@ from .mqtt_commands import (
     async_reboot_charge,
     async_restart,
     async_set_charger_config,
+    async_subscribe_telemetry,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
     Platform.BUTTON,
@@ -57,7 +61,7 @@ BASE_COMMAND_SCHEMA = vol.Schema(
 SET_CHARGER_CONFIG_SCHEMA = BASE_COMMAND_SCHEMA.extend(
     {
         vol.Required(ATTR_CONFIRM): vol.All(cv.boolean, vol.Equal(True)),
-        vol.Required(ATTR_CHARGE_MODE): vol.All(vol.Coerce(int), vol.In((0, 1))),
+        vol.Required(ATTR_CHARGE_MODE): vol.All(vol.Coerce(int), vol.In((0, 1, 2))),
         vol.Required(ATTR_MAX_CURRENT): vol.All(
             vol.Coerce(float), vol.Range(min=0.0, max=200.0)
         ),
@@ -147,6 +151,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    try:
+        coordinator.mqtt_unsubscribe = await async_subscribe_telemetry(
+            hass, coordinator
+        )
+    except HomeAssistantError:
+        _LOGGER.warning(
+            "MQTT telemetry is unavailable; continuing with local HTTP polling",
+            exc_info=True,
+        )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -155,5 +168,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
+        if coordinator := hass.data[DOMAIN].get(entry.entry_id):
+            coordinator.async_unsubscribe_mqtt()
         hass.data[DOMAIN].pop(entry.entry_id)
     return unloaded

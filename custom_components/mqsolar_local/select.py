@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -13,7 +15,12 @@ from .const import DOMAIN
 from .control import async_change_config, current_config
 from .coordinator import MQSolarCoordinator
 
-OPTIONS = ["0", "1"]
+CHARGE_MODES = {
+    "lithium": 0,
+    "lead_acid": 1,
+    "inverter_supply": 2,
+}
+CHARGE_MODES_BY_VALUE = {value: option for option, value in CHARGE_MODES.items()}
 
 
 async def async_setup_entry(
@@ -31,7 +38,7 @@ class MQSolarChargeModeSelect(CoordinatorEntity[MQSolarCoordinator], SelectEntit
 
     _attr_has_entity_name = True
     _attr_translation_key = "charge_mode"
-    _attr_options = OPTIONS
+    _attr_options: ClassVar[list[str]] = list(CHARGE_MODES)
     _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(self, coordinator: MQSolarCoordinator) -> None:
@@ -47,9 +54,11 @@ class MQSolarChargeModeSelect(CoordinatorEntity[MQSolarCoordinator], SelectEntit
     @property
     def current_option(self) -> str | None:
         config = current_config(self.coordinator)
-        return str(int(config["chargeMode"])) if config else None
+        if config is None:
+            return None
+        return CHARGE_MODES_BY_VALUE.get(int(config["chargeMode"]))
 
     async def async_select_option(self, option: str) -> None:
         await async_change_config(
-            self.hass, self.coordinator, "chargeMode", int(option)
+            self.hass, self.coordinator, "chargeMode", CHARGE_MODES[option]
         )

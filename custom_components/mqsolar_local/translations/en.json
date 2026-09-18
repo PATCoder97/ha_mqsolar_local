@@ -58,7 +58,14 @@
       "max_voltage": {"name": "Maximum charging voltage"}
     },
     "select": {
-      "charge_mode": {"name": "Charge mode"}
+      "charge_mode": {
+        "name": "Charge mode",
+        "state": {
+          "lithium": "Lithium battery",
+          "lead_acid": "Lead-acid battery",
+          "inverter_supply": "Inverter power supply"
+        }
+      }
     }
   },
   "services": {
@@ -92,7 +99,7 @@
       "fields": {
         "config_entry_id": {"name": "Device", "description": "The local Mạnh Quân Solar config entry."},
         "topic_code": {"name": "MQTT topic code", "description": "Topic value configured in the device MQTT settings; firmware default is 45a."},
-        "charge_mode": {"name": "Charge mode", "description": "Firmware charge mode value, 0 or 1."},
+        "charge_mode": {"name": "Charge mode", "description": "Firmware mode: 0 Lithium battery, 1 lead-acid battery, or 2 inverter power supply."},
         "max_current": {"name": "Maximum current", "description": "Maximum charging current in amperes."},
         "max_voltage": {"name": "Maximum voltage", "description": "Maximum charging voltage in volts."},
         "confirm": {"name": "Confirm", "description": "Confirm that the values are safe for the connected charger and battery."}

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import Callable
 from typing import Any
 
 from homeassistant.components.mqtt.client import async_publish, async_subscribe
@@ -14,10 +15,31 @@ from homeassistant.util.json import JsonObjectType
 from .const import MQTT_RESPONSE_TIMEOUT, MQTT_TOPIC_DISCOVERY_TIMEOUT
 from .coordinator import MQSolarCoordinator
 from .protocol import (
+    mqtt_charger_measurements,
     mqtt_command_payload,
     mqtt_discovered_topic_base,
     mqtt_topic_base,
 )
+
+
+async def async_subscribe_telemetry(
+    hass: HomeAssistant, coordinator: MQSolarCoordinator
+) -> Callable[[], None]:
+    """Subscribe to live MQTT measurements for this device."""
+    device_id = str(coordinator.data["_device_id"])
+
+    async def message_received(message: Any) -> None:
+        try:
+            payload = json.loads(message.payload)
+        except (TypeError, ValueError):
+            return
+        if not isinstance(payload, dict) or not mqtt_charger_measurements(payload):
+            return
+        topic_base = mqtt_discovered_topic_base(str(message.topic), device_id)
+        if topic_base is not None:
+            coordinator.async_set_mqtt_data(payload, topic_base)
+
+    return await async_subscribe(hass, f"+/{device_id}/data", message_received, qos=0)
 
 
 def _device_topic_type(coordinator: MQSolarCoordinator) -> str:

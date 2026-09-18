@@ -5,6 +5,17 @@ from __future__ import annotations
 import json
 from typing import Any
 
+MQTT_CHARGER_FIELDS = {
+    "pv_voltage": "pvVoltage",
+    "pv_current": "pvCurrent",
+    "bat_voltage": "batVoltage",
+    "bat_current": "batCurrent",
+    "charge_power": "chargingPower",
+    "today_kwh": "powerToday",
+    "total_kwh": "powerTotal",
+    "temperature": "temperature",
+}
+
 
 def mqtt_topic_base(device_type: str, topic_code: str, device_id: str) -> str:
     """Build the topic base used by firmware v2.3.3."""
@@ -17,6 +28,15 @@ def mqtt_discovered_topic_base(message_topic: str, device_id: str) -> str | None
     if len(parts) < 3 or parts[1] != device_id:
         return None
     return "/".join(parts[:2])
+
+
+def mqtt_charger_measurements(payload: dict[str, Any]) -> dict[str, Any]:
+    """Map MQTT field names to the field names used by sensor entities."""
+    return {
+        target: payload[source]
+        for source, target in MQTT_CHARGER_FIELDS.items()
+        if source in payload
+    }
 
 
 def mqtt_command_payload(command: str, parameter: dict[str, Any] | None = None) -> str:

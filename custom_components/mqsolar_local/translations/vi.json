@@ -58,7 +58,14 @@
       "max_voltage": {"name": "Điện áp sạc tối đa"}
     },
     "select": {
-      "charge_mode": {"name": "Chế độ sạc"}
+      "charge_mode": {
+        "name": "Chế độ sạc",
+        "state": {
+          "lithium": "Pin Lithium",
+          "lead_acid": "Ắc quy chì-axit",
+          "inverter_supply": "Nguồn Inverter"
+        }
+      }
     }
   },
   "services": {
@@ -92,7 +99,7 @@
       "fields": {
         "config_entry_id": {"name": "Thiết bị", "description": "Cấu hình Mạnh Quân Solar local cần điều khiển."},
         "topic_code": {"name": "Mã topic MQTT", "description": "Giá trị topic trong cấu hình module; mặc định firmware là 45a."},
-        "charge_mode": {"name": "Chế độ sạc", "description": "Giá trị chế độ firmware, 0 hoặc 1."},
+        "charge_mode": {"name": "Chế độ sạc", "description": "Chế độ firmware: 0 Pin Lithium, 1 Ắc quy chì-axit hoặc 2 Nguồn Inverter."},
         "max_current": {"name": "Dòng tối đa", "description": "Dòng sạc tối đa tính bằng ampe."},
         "max_voltage": {"name": "Điện áp tối đa", "description": "Điện áp sạc tối đa tính bằng vôn."},
         "confirm": {"name": "Xác nhận", "description": "Xác nhận các giá trị an toàn với bộ sạc và ắc quy đang kết nối."}

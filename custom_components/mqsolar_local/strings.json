@@ -66,7 +66,14 @@
       "max_voltage": {"name": "Maximum charging voltage"}
     },
     "select": {
-      "charge_mode": {"name": "Charge mode"}
+      "charge_mode": {
+        "name": "Charge mode",
+        "state": {
+          "lithium": "Lithium battery",
+          "lead_acid": "Lead-acid battery",
+          "inverter_supply": "Inverter power supply"
+        }
+      }
     }
   }
 }
