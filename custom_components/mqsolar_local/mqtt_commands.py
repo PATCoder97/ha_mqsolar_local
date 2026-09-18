@@ -11,9 +11,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util.json import JsonObjectType
 
-from .const import MQTT_RESPONSE_TIMEOUT
+from .const import MQTT_RESPONSE_TIMEOUT, MQTT_TOPIC_DISCOVERY_TIMEOUT
 from .coordinator import MQSolarCoordinator
-from .protocol import mqtt_command_payload, mqtt_topic_base
+from .protocol import (
+    mqtt_command_payload,
+    mqtt_discovered_topic_base,
+    mqtt_topic_base,
+)
 
 
 def _device_topic_type(coordinator: MQSolarCoordinator) -> str:
@@ -29,6 +33,69 @@ def _topic_base(coordinator: MQSolarCoordinator, topic_code: str) -> str:
     return mqtt_topic_base(_device_topic_type(coordinator), topic_code, device_id)
 
 
+def _store_topic_base(coordinator: MQSolarCoordinator, topic_base: str) -> None:
+    data = dict(coordinator.data)
+    data["_mqtt_topic_base"] = topic_base
+    coordinator.async_set_updated_data(data)
+
+
+async def _async_resolve_topic_base(
+    hass: HomeAssistant,
+    coordinator: MQSolarCoordinator,
+    topic_code: str,
+) -> str:
+    """Discover the actual prefix from live device traffic.
+
+    Firmware v2.3.3 can publish under a prefix different from the embedded
+    device-type string. For example, a device configured with topic ``45a``
+    was observed publishing below ``45a_45a/<deviceId>``.
+    """
+    cached = coordinator.data.get("_mqtt_topic_base")
+    if isinstance(cached, str):
+        return cached
+
+    device_id = str(coordinator.data["_device_id"])
+    discovered: asyncio.Future[str] = hass.loop.create_future()
+
+    async def message_received(message: Any) -> None:
+        if discovered.done():
+            return
+        topic_base = mqtt_discovered_topic_base(str(message.topic), device_id)
+        if topic_base is not None:
+            discovered.set_result(topic_base)
+
+    unsubscribe = await async_subscribe(
+        hass, f"+/{device_id}/#", message_received, qos=0
+    )
+    try:
+        async with asyncio.timeout(MQTT_TOPIC_DISCOVERY_TIMEOUT):
+            topic_base = await discovered
+    except TimeoutError:
+        # Retain the reverse-engineered prefix as a compatibility fallback for
+        # devices that do not publish periodic telemetry.
+        topic_base = _topic_base(coordinator, topic_code)
+    finally:
+        unsubscribe()
+
+    _store_topic_base(coordinator, topic_base)
+    return topic_base
+
+
+async def _async_publish_command(
+    hass: HomeAssistant,
+    topic_base: str,
+    command: str,
+    parameter: dict[str, Any] | None = None,
+) -> None:
+    await async_publish(
+        hass,
+        f"{topic_base}/cmd",
+        mqtt_command_payload(command, parameter),
+        qos=0,
+        retain=False,
+    )
+
+
 async def async_send_command(
     hass: HomeAssistant,
     coordinator: MQSolarCoordinator,
@@ -37,13 +104,8 @@ async def async_send_command(
     parameter: dict[str, Any] | None = None,
 ) -> None:
     """Publish one firmware command without retaining it."""
-    await async_publish(
-        hass,
-        f"{_topic_base(coordinator, topic_code)}/cmd",
-        mqtt_command_payload(command, parameter),
-        qos=0,
-        retain=False,
-    )
+    topic_base = await _async_resolve_topic_base(hass, coordinator, topic_code)
+    await _async_publish_command(hass, topic_base, command, parameter)
 
 
 async def async_restart(
@@ -67,7 +129,8 @@ async def async_get_charger_config(
     # Firmware puts "charger_config_sync" in the JSON command field. The final
     # topic suffix is generated separately, so listen below the device topic and
     # filter by payload instead of assuming a suffix.
-    response_topic = f"{_topic_base(coordinator, topic_code)}/#"
+    topic_base = await _async_resolve_topic_base(hass, coordinator, topic_code)
+    response_topic = f"{topic_base}/#"
     response: asyncio.Future[JsonObjectType] = hass.loop.create_future()
 
     async def message_received(message: Any) -> None:
@@ -82,7 +145,7 @@ async def async_get_charger_config(
 
     unsubscribe = await async_subscribe(hass, response_topic, message_received, qos=0)
     try:
-        await async_send_command(hass, coordinator, topic_code, "get_charger_config")
+        await _async_publish_command(hass, topic_base, "get_charger_config")
         async with asyncio.timeout(MQTT_RESPONSE_TIMEOUT):
             return await response
     except TimeoutError as err:

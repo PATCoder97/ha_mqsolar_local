@@ -11,9 +11,15 @@ def mqtt_topic_base(device_type: str, topic_code: str, device_id: str) -> str:
     return f"{device_type}_{topic_code}/{device_id}"
 
 
-def mqtt_command_payload(
-    command: str, parameter: dict[str, Any] | None = None
-) -> str:
+def mqtt_discovered_topic_base(message_topic: str, device_id: str) -> str | None:
+    """Extract a device base from a live MQTT topic."""
+    parts = message_topic.split("/")
+    if len(parts) < 3 or parts[1] != device_id:
+        return None
+    return "/".join(parts[:2])
+
+
+def mqtt_command_payload(command: str, parameter: dict[str, Any] | None = None) -> str:
     """Build the compact command envelope parsed by the firmware."""
     payload: dict[str, Any] = {"command": command}
     if parameter is not None:

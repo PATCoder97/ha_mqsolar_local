@@ -13,6 +13,7 @@ ATTR_MAX_VOLTAGE: Final = "max_voltage"
 
 DEFAULT_MQTT_TOPIC_CODE: Final = "45a"
 MQTT_RESPONSE_TIMEOUT: Final = 8
+MQTT_TOPIC_DISCOVERY_TIMEOUT: Final = 4
 
 SERVICE_RESTART: Final = "restart"
 SERVICE_REBOOT_CHARGE: Final = "reboot_charge"

@@ -24,10 +24,12 @@ Các action sau được lấy từ firmware v2.3.3:
 - `mqsolar_local.set_charger_config`: ghi `chargeMode`, `maxCurrent`,
   `maxVoltage`; bắt buộc đặt `confirm: true`.
 
-Home Assistant và module phải kết nối cùng MQTT broker. Firmware tạo command
-topic theo dạng `mppt_charger_<topic_code>/<deviceId>/cmd`; mã topic mặc định
-trong firmware v2.3.3 là `45a`. Nếu đã đổi trường `topic` qua
-`/api/mqtt/config`, hãy nhập đúng giá trị đó khi chạy action.
+Home Assistant và module phải kết nối cùng MQTT broker. Integration tự phát hiện
+base topic từ luồng dữ liệu MQTT theo Device ID rồi gửi lệnh vào `<base>/cmd`.
+Thiết bị v2.3.3 đã kiểm tra thực tế với cấu hình `topic: 45a` sử dụng
+`45a_45a/<deviceId>/data` và `45a_45a/<deviceId>/cmd`, khác với prefix
+`mppt_charger` nhúng trong firmware. Nếu không thấy dữ liệu MQTT, integration mới
+dùng mẫu reverse-engineered làm fallback.
 
 Các ô chỉnh dòng, áp và chế độ chỉ khả dụng sau khi integration đọc được phản
 hồi `charger_config_sync`. Nhấn **Đọc cấu hình sạc** nếu chúng đang hiển thị

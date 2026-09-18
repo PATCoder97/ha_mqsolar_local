@@ -32,10 +32,12 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data = await self.api.async_get_data()
-            # Charger configuration comes from MQTT, while measurements are
-            # polled over HTTP. Preserve it across HTTP refreshes.
-            if self.data and "_charger_config" in self.data:
-                data["_charger_config"] = self.data["_charger_config"]
+            # MQTT state is independent of the HTTP measurement payload.
+            # Preserve it across HTTP refreshes.
+            if self.data:
+                for key in ("_charger_config", "_mqtt_topic_base"):
+                    if key in self.data:
+                        data[key] = self.data[key]
             return data
         except MQSolarApiError as err:
             raise UpdateFailed(str(err)) from err
