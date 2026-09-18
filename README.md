@@ -85,6 +85,10 @@ Firmware `MPPT_WIFI_0905_v2.3.3.bin` đáp ứng hai endpoint MPPT.
 2. Thêm URL GitHub của repo này với loại **Integration**.
 3. Tải **MQ Solar Local** và khởi động lại Home Assistant.
 
+Logo được đóng gói cục bộ trong integration và hiển thị từ Home Assistant
+2026.3 trở lên. Sau khi cập nhật, cần khởi động lại Home Assistant và có thể cần
+refresh mạnh trình duyệt để xóa ảnh placeholder đã cache.
+
 ## Cài thủ công
 
 Copy thư mục `custom_components/mqsolar_local` vào
