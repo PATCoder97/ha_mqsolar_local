@@ -1,6 +1,6 @@
 {
   "domain": "mqsolar_local",
-  "name": "Mạnh Quân Solar",
+  "name": "MQ Solar Local",
   "codeowners": ["@PATCoder97"],
   "config_flow": true,
   "after_dependencies": ["mqtt"],
@@ -10,5 +10,5 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": [],
-  "version": "1.1.0"
+  "version": "1.1.1"
 }

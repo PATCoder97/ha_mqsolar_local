@@ -1,4 +1,4 @@
-# Mạnh Quân Solar — local only
+# MQ Solar Local
 
 Custom integration Home Assistant chỉ giao tiếp trực tiếp với thiết bị trong
 mạng LAN. Repo này không chứa Cloud API, WebSocket, API token hoặc Device ID
@@ -76,14 +76,14 @@ Firmware `MPPT_WIFI_0905_v2.3.3.bin` đáp ứng hai endpoint MPPT.
 
 1. Mở **HACS → Integrations → Custom repositories**.
 2. Thêm URL GitHub của repo này với loại **Integration**.
-3. Tải **Mạnh Quân Solar** và khởi động lại Home Assistant.
+3. Tải **MQ Solar Local** và khởi động lại Home Assistant.
 
 ## Cài thủ công
 
 Copy thư mục `custom_components/mqsolar_local` vào
 `/config/custom_components/mqsolar_local`, sau đó khởi động lại Home Assistant.
 
-Vào **Cài đặt → Thiết bị & Dịch vụ → Thêm tích hợp → Mạnh Quân Solar** và chọn
+Vào **Cài đặt → Thiết bị & Dịch vụ → Thêm tích hợp → MQ Solar Local** và chọn
 **Quét mạng nội bộ** hoặc **Nhập IP thủ công**.
 
 Nên cấu hình DHCP reservation cho module để IP không thay đổi.

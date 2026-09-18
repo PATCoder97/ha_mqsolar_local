@@ -23,7 +23,7 @@ class MQSolarCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
-            name=f"Mạnh Quân Solar {host}",
+            name=f"MQ Solar Local {host}",
             update_interval=timedelta(seconds=UPDATE_INTERVAL_SECONDS),
         )
         self.host = host

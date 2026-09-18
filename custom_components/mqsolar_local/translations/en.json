@@ -1,9 +1,9 @@
 {
-  "title": "Mạnh Quân Solar",
+  "title": "MQ Solar Local",
   "config": {
     "step": {
       "user": {
-        "title": "Add a local Mạnh Quân Solar device",
+        "title": "Add an MQ Solar Local device",
         "description": "Choose a local network setup method.",
         "menu_options": {
           "scan": "Scan local network",

@@ -1,0 +1,37 @@
+{
+  "title": "MQ Solar Local",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add an MQ Solar Local device",
+        "description": "Choose a local network setup method.",
+        "menu_options": {
+          "scan": "Scan local network",
+          "manual": "Enter IP address manually"
+        }
+      },
+      "manual": {
+        "title": "Enter device address",
+        "data": {
+          "host": "IP address or hostname"
+        },
+        "data_description": {
+          "host": "The LAN address of the Wi-Fi module."
+        }
+      },
+      "scan": {
+        "title": "Select a discovered device",
+        "data": {
+          "host": "Device"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the device."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "no_devices_found": "No compatible device was found on the local network."
+    }
+  }
+}
