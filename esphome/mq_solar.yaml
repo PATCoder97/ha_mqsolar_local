@@ -1,0 +1,576 @@
+substitutions:
+  device_name: mqsolar-mppt
+  friendly_name: "MQ Solar MPPT"
+  # Firmware gốc khởi tạo UART ở 9600 8N1 trên UART0.
+  uart_baud_rate: "9600"
+  mqtt_host: "ktxn258.duckdns.org"
+  mqtt_port: "1883"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  comment: "ESPHome replacement for MPPT_WIFI_0905_v2.3.3"
+  on_boot:
+    priority: -100
+    then:
+      - delay: 2s
+      - uart.write:
+          id: charger_uart
+          data: "CFG_GET|\n"
+
+esp8266:
+  board: esp01_1m
+  board_flash_mode: dout
+  restore_from_flash: false
+
+# UART0 được dành hoàn toàn cho STM32, vì vậy không xuất log qua cổng serial.
+logger:
+  baud_rate: 0
+  level: INFO
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${friendly_name} Setup"
+    password: !secret fallback_ap_password
+
+mqtt:
+  broker: ${mqtt_host}
+  port: ${mqtt_port}
+  username: "tuan9795"
+  password: !secret mqtt_password
+  reboot_timeout: 0s
+
+captive_portal:
+
+globals:
+  - id: last_valid_frame_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: charger_config_ready
+    type: bool
+    restore_value: false
+    initial_value: "false"
+  - id: charger_mode_value
+    type: int
+    restore_value: false
+    initial_value: "-1"
+  - id: charger_current_value
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: charger_voltage_value
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: charger_current_limit
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+  - id: charger_voltage_limit
+    type: float
+    restore_value: false
+    initial_value: "0.0"
+
+script:
+  # Chỉ gửi khi STM32 đã trả về CFG_R và các giá trị còn trong giới hạn
+  # mà chính bộ sạc công bố.
+  - id: write_charger_config
+    mode: restart
+    then:
+      - lambda: |-
+          if (!id(charger_config_ready)) {
+            ESP_LOGW("mqsolar", "Chưa có CFG_R; yêu cầu đọc cấu hình trước khi ghi");
+            id(charger_uart).write_str("CFG_GET|\n");
+            return;
+          }
+          if (id(charger_mode_value) < 0 || id(charger_mode_value) > 2 ||
+              id(charger_current_value) < 0.0f ||
+              id(charger_current_value) > id(charger_current_limit) ||
+              id(charger_voltage_value) < 0.0f ||
+              id(charger_voltage_value) > id(charger_voltage_limit)) {
+            ESP_LOGE("mqsolar", "Từ chối gửi cấu hình vượt giới hạn STM32");
+            return;
+          }
+
+          char frame[40];
+          // Giao thức ghi của firmware gốc dùng x100 cho cả dòng và áp,
+          // khác với cách STM32 trả về trong CFG_R.
+          snprintf(frame, sizeof(frame), "CFG|%d|%d|%d|\n",
+                   id(charger_mode_value),
+                   (int) lroundf(id(charger_current_value) * 100.0f),
+                   (int) lroundf(id(charger_voltage_value) * 100.0f));
+          id(charger_uart).write_str(frame);
+          ESP_LOGI("mqsolar", "Đã gửi cấu hình mới cho STM32");
+      - delay: 500ms
+      - uart.write:
+          id: charger_uart
+          data: "CFG_GET|\n"
+
+uart:
+  id: charger_uart
+  tx_pin: GPIO1
+  rx_pin: GPIO3
+  baud_rate: ${uart_baud_rate}
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+  rx_buffer_size: 256
+  debug:
+    direction: RX
+    dummy_receiver: true
+    after:
+      delimiter: "\n"
+    sequence:
+      - lambda: |-
+          if (direction != uart::UART_DIRECTION_RX || bytes.empty()) {
+            return;
+          }
+
+          std::string line(bytes.begin(), bytes.end());
+          while (!line.empty() &&
+                 (line.back() == '\r' || line.back() == '\n' || line.back() == '\0' || line.back() == ' ')) {
+            line.pop_back();
+          }
+          const auto first = line.find_first_not_of(" \t");
+          if (first == std::string::npos) {
+            return;
+          }
+          line.erase(0, first);
+          id(uart_raw).publish_state(line);
+
+          std::vector<std::string> fields;
+          size_t start = 0;
+          for (size_t pos = 0; pos <= line.size(); pos++) {
+            if (pos == line.size() || line[pos] == '|') {
+              fields.emplace_back(line.substr(start, pos - start));
+              start = pos + 1;
+            }
+          }
+          while (!fields.empty() && fields.back().empty()) {
+            fields.pop_back();
+          }
+
+          // Firmware v2.3.3:
+          // CFG_R|chargeMode|maxCurrent|maxVoltage|maxChargeCurrent|
+          // maxChargeVoltage|
+          // maxCurrent/maxChargeCurrent tính bằng A; maxVoltage tính theo 0.1 V;
+          // maxChargeVoltage tính bằng V. Ví dụ: CFG_R|0|15|144|40|42|
+          // nghĩa là mode 0, 15 A, 14.4 V, giới hạn 40 A và 42 V.
+          if (!fields.empty() && fields[0] == "CFG_R") {
+            id(charger_config).publish_state(line);
+            if (fields.size() >= 6) {
+              char *end = nullptr;
+              const int mode = strtol(fields[1].c_str(), &end, 10);
+              if (end == fields[1].c_str() || *end != '\0' || mode < 0 || mode > 2) {
+                ESP_LOGW("mqsolar", "CFG_R có chế độ sạc không hợp lệ: %s", line.c_str());
+                return;
+              }
+
+              auto parse_number = [](const std::string &text) -> float {
+                char *value_end = nullptr;
+                float result = strtof(text.c_str(), &value_end);
+                if (value_end == text.c_str() || *value_end != '\0' || !isfinite(result)) {
+                  return NAN;
+                }
+                return result;
+              };
+
+              const float current = parse_number(fields[2]);
+              const float voltage_raw = parse_number(fields[3]);
+              const float current_limit = parse_number(fields[4]);
+              const float voltage_limit = parse_number(fields[5]);
+              const float voltage = voltage_raw / 10.0f;
+              if (!isfinite(current) || !isfinite(voltage) ||
+                  !isfinite(current_limit) || !isfinite(voltage_limit) ||
+                  current_limit <= 0.0f || voltage_limit <= 0.0f ||
+                  current > current_limit || voltage > voltage_limit) {
+                ESP_LOGW("mqsolar", "CFG_R có giá trị không hợp lệ: %s", line.c_str());
+                return;
+              }
+
+              id(charger_mode_value) = mode;
+              id(charger_current_value) = current;
+              id(charger_voltage_value) = voltage;
+              id(charger_current_limit) = current_limit;
+              id(charger_voltage_limit) = voltage_limit;
+              id(charger_config_ready) = true;
+
+              static const char *const mode_names[] = {
+                "Pin Lithium", "Ắc quy chì-axit", "Nguồn Inverter"
+              };
+              id(charge_mode).publish_state(mode_names[mode]);
+              id(max_charging_current).publish_state(current);
+              id(max_charging_voltage).publish_state(voltage);
+              id(charging_current_limit).publish_state(current_limit);
+              id(charging_voltage_limit).publish_state(voltage_limit);
+            }
+            if (fields.size() > 6) {
+              id(mcu_version).publish_state(fields[6]);
+            }
+            return;
+          }
+
+          // Telemetry STM32:
+          // pv_voltage_x100|pv_current_x1000|bat_voltage_x100|
+          // bat_current_x1000|temperature|today_kwh_x1000|
+          // total_kwh_x1000|status
+          // Ví dụ: 0|0|1688|0|26|0|0|4 = pin 16.88 V, 26 °C và
+          // trạng thái không hợp lệ 4. Theo firmware gốc, CHARGING phải là 1.
+          if (fields.size() != 8) {
+            ESP_LOGW("mqsolar", "Bỏ qua frame UART không đúng 8 trường: %s", line.c_str());
+            return;
+          }
+
+          float value[8];
+          for (size_t i = 0; i < 8; i++) {
+            char *end = nullptr;
+            value[i] = strtof(fields[i].c_str(), &end);
+            if (end == fields[i].c_str() || *end != '\0' || !isfinite(value[i])) {
+              ESP_LOGW("mqsolar", "Bỏ qua frame có giá trị lỗi: %s", line.c_str());
+              return;
+            }
+          }
+
+          const float pv_v = value[0] / 100.0f;
+          float pv_a = value[1] / 1000.0f;
+          const float bat_v = value[2] / 100.0f;
+          const float bat_a = value[3] / 1000.0f;
+          // Firmware v2.3.3 chỉ thay riêng dòng PV bất thường bằng 0 và vẫn
+          // publish các trường còn lại. INT32_MAX vì thế cũng trở thành 0 A.
+          if (pv_a > 100.0f) {
+            pv_a = 0.0f;
+          }
+          const int status = lroundf(value[7]);
+          // Enum của firmware gốc là -3..2, không phải 0..5.
+          static const char *const status_names[] = {
+            "FAULT_LOW", "FAULT_HIGH", "OFF", "IDLE", "CHARGING", "FULL"
+          };
+
+          // Firmware gốc cộng các mẫu trong khoảng 1 giây, lấy trung bình bốn
+          // giá trị điện rồi mới publish MQTT. Các trường còn lại dùng mẫu mới nhất.
+          static float pv_v_sum = 0.0f;
+          static float pv_a_sum = 0.0f;
+          static float bat_v_sum = 0.0f;
+          static float bat_a_sum = 0.0f;
+          static uint32_t sample_count = 0;
+          static uint32_t last_publish_ms = 0;
+          pv_v_sum += pv_v;
+          pv_a_sum += pv_a;
+          bat_v_sum += bat_v;
+          bat_a_sum += bat_a;
+          sample_count++;
+
+          const uint32_t now_ms = millis();
+          id(last_valid_frame_ms) = now_ms;
+          id(charger_online).publish_state(true);
+          if ((uint32_t) (now_ms - last_publish_ms) < 1000U) {
+            return;
+          }
+
+          const float avg_pv_v = pv_v_sum / sample_count;
+          const float avg_pv_a = pv_a_sum / sample_count;
+          const float avg_bat_v = bat_v_sum / sample_count;
+          const float avg_bat_a = bat_a_sum / sample_count;
+          pv_v_sum = pv_a_sum = bat_v_sum = bat_a_sum = 0.0f;
+          sample_count = 0;
+          last_publish_ms = now_ms;
+
+          id(pv_voltage).publish_state(avg_pv_v);
+          id(pv_current).publish_state(avg_pv_a);
+          id(battery_voltage).publish_state(avg_bat_v);
+          id(battery_current).publish_state(avg_bat_a);
+          id(charging_power).publish_state(avg_pv_v * avg_pv_a);
+          id(energy_today).publish_state(value[5] / 1000.0f);
+          id(energy_total).publish_state(value[6] / 1000.0f);
+          id(charger_temperature).publish_state(value[4]);
+          if (status >= -3 && status <= 2) {
+            id(charger_status).publish_state(status_names[status + 3]);
+          } else {
+            id(charger_status).publish_state(std::string("UNKNOWN_") + to_string(status));
+          }
+
+sensor:
+  - platform: template
+    id: pv_voltage
+    name: "Điện áp PV"
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 2
+
+  - platform: template
+    id: pv_current
+    name: "Dòng PV"
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+
+  - platform: template
+    id: battery_voltage
+    name: "Điện áp pin"
+    unit_of_measurement: V
+    device_class: voltage
+    state_class: measurement
+    accuracy_decimals: 2
+
+  - platform: template
+    id: battery_current
+    name: "Dòng sạc pin"
+    unit_of_measurement: A
+    device_class: current
+    state_class: measurement
+    accuracy_decimals: 3
+
+  - platform: template
+    id: charging_power
+    name: "Công suất sạc"
+    unit_of_measurement: W
+    device_class: power
+    state_class: measurement
+    accuracy_decimals: 2
+
+  - platform: template
+    id: energy_today
+    name: "Điện năng hôm nay"
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 3
+
+  - platform: template
+    id: energy_total
+    name: "Tổng điện năng"
+    unit_of_measurement: kWh
+    device_class: energy
+    state_class: total_increasing
+    accuracy_decimals: 3
+
+  - platform: template
+    id: charger_temperature
+    name: "Nhiệt độ bộ sạc"
+    unit_of_measurement: °C
+    device_class: temperature
+    state_class: measurement
+    accuracy_decimals: 0
+
+  - platform: wifi_signal
+    name: "Wi-Fi RSSI"
+    update_interval: 60s
+    entity_category: diagnostic
+
+  - platform: template
+    id: charging_current_limit
+    name: "Giới hạn dòng phần cứng"
+    unit_of_measurement: A
+    device_class: current
+    accuracy_decimals: 2
+    entity_category: diagnostic
+
+  - platform: template
+    id: charging_voltage_limit
+    name: "Giới hạn áp phần cứng"
+    unit_of_measurement: V
+    device_class: voltage
+    accuracy_decimals: 2
+    entity_category: diagnostic
+
+select:
+  - platform: template
+    id: charge_mode
+    name: "Chế độ sạc"
+    icon: mdi:format-list-bulleted
+    entity_category: config
+    optimistic: true
+    options:
+      - "Pin Lithium"
+      - "Ắc quy chì-axit"
+      - "Nguồn Inverter"
+    set_action:
+      - lambda: |-
+          if (x == "Pin Lithium") {
+            id(charger_mode_value) = 0;
+          } else if (x == "Ắc quy chì-axit") {
+            id(charger_mode_value) = 1;
+          } else {
+            id(charger_mode_value) = 2;
+          }
+          ESP_LOGI("mqsolar", "Đã đổi chế độ; chờ nhấn Áp dụng cấu hình sạc");
+
+number:
+  - platform: template
+    id: max_charging_current
+    name: "Dòng sạc tối đa"
+    icon: mdi:current-ac
+    entity_category: config
+    unit_of_measurement: A
+    device_class: current
+    min_value: 0
+    max_value: 200
+    step: 1
+    mode: box
+    optimistic: true
+    set_action:
+      - lambda: |-
+          if (!id(charger_config_ready) || x > id(charger_current_limit)) {
+            ESP_LOGW("mqsolar", "Dòng %.2f A vượt giới hạn hoặc chưa đọc CFG_R", x);
+            id(max_charging_current).publish_state(id(charger_current_value));
+            id(charger_uart).write_str("CFG_GET|\n");
+            return;
+          }
+          id(charger_current_value) = x;
+          ESP_LOGI("mqsolar", "Đã đổi dòng; chờ nhấn Áp dụng cấu hình sạc");
+
+  - platform: template
+    id: max_charging_voltage
+    name: "Điện áp ngắt sạc"
+    icon: mdi:sine-wave
+    entity_category: config
+    unit_of_measurement: V
+    device_class: voltage
+    min_value: 0
+    max_value: 100
+    step: 0.1
+    mode: box
+    optimistic: true
+    set_action:
+      - lambda: |-
+          if (!id(charger_config_ready) || x > id(charger_voltage_limit)) {
+            ESP_LOGW("mqsolar", "Điện áp %.2f V vượt giới hạn hoặc chưa đọc CFG_R", x);
+            id(max_charging_voltage).publish_state(id(charger_voltage_value));
+            id(charger_uart).write_str("CFG_GET|\n");
+            return;
+          }
+          id(charger_voltage_value) = x;
+          ESP_LOGI("mqsolar", "Đã đổi điện áp; chờ nhấn Áp dụng cấu hình sạc");
+
+text_sensor:
+  - platform: template
+    id: charger_status
+    name: "Trạng thái bộ sạc"
+
+  - platform: template
+    id: mcu_version
+    name: "Phiên bản STM32"
+    entity_category: diagnostic
+
+  - platform: template
+    id: charger_config
+    internal: true
+
+  - platform: template
+    id: uart_raw
+    internal: true
+
+  - platform: wifi_info
+    ip_address:
+      name: "Địa chỉ IP"
+      entity_category: diagnostic
+
+  - platform: version
+    name: "Firmware Wi-Fi (ESPHome)"
+    hide_timestamp: true
+    entity_category: diagnostic
+
+  - platform: template
+    name: "MQTT host"
+    entity_category: diagnostic
+    lambda: return {"${mqtt_host}"};
+    update_interval: 6h
+
+  - platform: template
+    name: "MQTT port"
+    entity_category: diagnostic
+    lambda: return {"${mqtt_port}"};
+    update_interval: 6h
+
+  - platform: template
+    name: "MQTT topic"
+    entity_category: diagnostic
+    lambda: |-
+      if (mqtt::global_mqtt_client == nullptr) {
+        return {""};
+      }
+      return {mqtt::global_mqtt_client->get_topic_prefix()};
+    update_interval: 60s
+
+binary_sensor:
+  - platform: template
+    id: charger_online
+    name: "Kết nối STM32"
+    device_class: connectivity
+
+  - platform: template
+    name: "Đã cấu hình MQTT"
+    entity_category: diagnostic
+    lambda: return true;
+
+  - platform: template
+    name: "Kết nối MQTT"
+    device_class: connectivity
+    entity_category: diagnostic
+    lambda: return mqtt_is_connected();
+
+button:
+  - platform: template
+    name: "Áp dụng cấu hình sạc"
+    icon: mdi:content-save-check
+    entity_category: config
+    on_press:
+      - script.execute: write_charger_config
+
+  - platform: template
+    name: "Đọc cấu hình bộ sạc"
+    icon: mdi:cog-refresh
+    entity_category: config
+    on_press:
+      - uart.write:
+          id: charger_uart
+          data: "CFG_GET|\n"
+
+  - platform: template
+    name: "Khởi động lại bộ sạc"
+    icon: mdi:restart-alert
+    entity_category: config
+    on_press:
+      - uart.write:
+          id: charger_uart
+          data: "REBOOT|\n"
+
+  - platform: restart
+    name: "Khởi động lại Wi-Fi"
+    icon: mdi:restart
+    entity_category: config
+
+time:
+  - platform: sntp
+    id: network_time
+    timezone: Asia/Ho_Chi_Minh
+    on_time:
+      - seconds: 0
+        minutes: /5
+        then:
+          - uart.write:
+              id: charger_uart
+              data: !lambda |-
+                char frame[16];
+                snprintf(frame, sizeof(frame), "TIME|%02d|%02d|\n", id(network_time).now().hour,
+                         id(network_time).now().minute);
+                return std::vector<uint8_t>(frame, frame + strlen(frame));
+
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          const uint32_t last = id(last_valid_frame_ms);
+          if (last == 0 || (uint32_t) (millis() - last) > 10000U) {
+            id(charger_online).publish_state(false);
+          }
