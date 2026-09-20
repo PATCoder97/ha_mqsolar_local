@@ -125,7 +125,7 @@ script:
             return;
           }
 
-          char frame[16];
+          char frame[64];
           // Firmware gốc nhúng LF ngay trong format TIME và dùng Serial.print,
           // vì vậy frame kết thúc bằng LF nhưng không có CR.
           snprintf(frame, sizeof(frame), "TIME|%02d|%02d|\n", now.hour, now.minute);
@@ -602,8 +602,11 @@ button:
 time:
   - platform: sntp
     id: network_time
-    timezone: Asia/Ho_Chi_Minh
-    # BIN gốc thử lấy giờ lúc khởi động và đồng bộ lại sau khoảng một giờ.
+    # BIN gốc gọi configTime(25200, 0, "pool.ntp.org"): UTC+7 cố định,
+    # không DST, một máy chủ NTP duy nhất.
+    timezone: "ICT-7"
+    servers:
+      - pool.ntp.org
     update_interval: 1h
     on_time_sync:
       then:
