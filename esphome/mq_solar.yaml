@@ -58,6 +58,14 @@ globals:
     type: int
     restore_value: false
     initial_value: "-1"
+  - id: pending_wifi_status
+    type: int
+    restore_value: false
+    initial_value: "-1"
+  - id: wifi_status_changed_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
   - id: charger_config_ready
     type: bool
     restore_value: false
@@ -602,28 +610,27 @@ time:
         - script.execute: send_time_to_stm32
 
 interval:
-  # Vẫn kiểm tra Wi-Fi mỗi giây như BIN gốc, nhưng chỉ gửi khi trạng thái đổi.
-  # BIN gốc gửi lặp mỗi giây, làm một số phiên bản STM32 cập nhật LCD liên tục.
+  # Chỉ gửi trạng thái Wi-Fi sau khi ổn định 3 giây. Việc debounce tránh các
+  # trạng thái chuyển tiếp lúc kết nối làm STM32 cập nhật LCD liên tục.
   - interval: 1s
     then:
       - lambda: |-
           const int wifi_status = static_cast<int>(WiFi.status());
+          if (wifi_status != id(pending_wifi_status)) {
+            id(pending_wifi_status) = wifi_status;
+            id(wifi_status_changed_ms) = millis();
+            return;
+          }
           if (wifi_status == id(last_wifi_status)) {
+            return;
+          }
+          if ((uint32_t) (millis() - id(wifi_status_changed_ms)) < 3000U) {
             return;
           }
           id(last_wifi_status) = wifi_status;
 
           const char *frame = nullptr;
           switch (wifi_status) {
-            case WL_IDLE_STATUS: {
-              // BIN lưu ID dạng CHG%06lu. Chip ID ổn định cho cùng một ESP,
-              // nên có thể tái tạo ID tương đương mà không cần ghi flash.
-              char wifi_id_frame[32];
-              snprintf(wifi_id_frame, sizeof(wifi_id_frame), "WiFiID:CHG%06lu\n",
-                       static_cast<unsigned long>(ESP.getChipId()));
-              id(charger_uart).write_str(wifi_id_frame);
-              return;
-            }
             case WL_NO_SSID_AVAIL:
               frame = "WIFI|NO_SSID_AVAIL\r\n";
               break;
