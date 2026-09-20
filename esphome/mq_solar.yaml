@@ -1,6 +1,6 @@
 substitutions:
-  device_name: mqsolar-mppt
-  friendly_name: "MQ Solar MPPT"
+  device_name: mqsolar-mppt-n258
+  friendly_name: "Solar MPPT N258"
   # Firmware gốc khởi tạo UART ở 9600 8N1 trên UART0.
   uart_baud_rate: "9600"
   mqtt_host: "ktxn258.duckdns.org"
@@ -54,6 +54,10 @@ globals:
     type: uint32_t
     restore_value: false
     initial_value: "0"
+  - id: last_wifi_status
+    type: int
+    restore_value: false
+    initial_value: "-1"
   - id: charger_config_ready
     type: bool
     restore_value: false
@@ -114,9 +118,9 @@ script:
           }
 
           char frame[16];
-          // Firmware gốc dùng Serial.print ở đây, không thêm CR/LF. Frame
-          // WIFI định kỳ kế tiếp sẽ kết thúc chuỗi UART bằng CR/LF.
-          snprintf(frame, sizeof(frame), "TIME|%02d|%02d|", now.hour, now.minute);
+          // Firmware gốc nhúng LF ngay trong format TIME và dùng Serial.print,
+          // vì vậy frame kết thúc bằng LF nhưng không có CR.
+          snprintf(frame, sizeof(frame), "TIME|%02d|%02d|\n", now.hour, now.minute);
           id(charger_uart).write_str(frame);
 
   # Chỉ gửi khi STM32 đã trả về CFG_R và các giá trị còn trong giới hạn
@@ -591,23 +595,35 @@ time:
   - platform: sntp
     id: network_time
     timezone: Asia/Ho_Chi_Minh
+    # BIN gốc thử lấy giờ lúc khởi động và đồng bộ lại sau khoảng một giờ.
+    update_interval: 1h
     on_time_sync:
       then:
         - script.execute: send_time_to_stm32
-    on_time:
-      - seconds: 0
-        minutes: /5
-        then:
-          - script.execute: send_time_to_stm32
 
 interval:
-  # Firmware gốc kiểm tra Wi-Fi mỗi giây và dùng Serial.println, tương đương
-  # một frame kết thúc bằng CR/LF. STM32 dùng frame này như heartbeat Wi-Fi.
+  # Vẫn kiểm tra Wi-Fi mỗi giây như BIN gốc, nhưng chỉ gửi khi trạng thái đổi.
+  # BIN gốc gửi lặp mỗi giây, làm một số phiên bản STM32 cập nhật LCD liên tục.
   - interval: 1s
     then:
       - lambda: |-
+          const int wifi_status = static_cast<int>(WiFi.status());
+          if (wifi_status == id(last_wifi_status)) {
+            return;
+          }
+          id(last_wifi_status) = wifi_status;
+
           const char *frame = nullptr;
-          switch (WiFi.status()) {
+          switch (wifi_status) {
+            case WL_IDLE_STATUS: {
+              // BIN lưu ID dạng CHG%06lu. Chip ID ổn định cho cùng một ESP,
+              // nên có thể tái tạo ID tương đương mà không cần ghi flash.
+              char wifi_id_frame[32];
+              snprintf(wifi_id_frame, sizeof(wifi_id_frame), "WiFiID:CHG%06lu\n",
+                       static_cast<unsigned long>(ESP.getChipId()));
+              id(charger_uart).write_str(wifi_id_frame);
+              return;
+            }
             case WL_NO_SSID_AVAIL:
               frame = "WIFI|NO_SSID_AVAIL\r\n";
               break;
