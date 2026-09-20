@@ -611,6 +611,13 @@ time:
     on_time_sync:
       then:
         - script.execute: send_time_to_stm32
+    # NTP chỉ đồng bộ mỗi giờ; thời gian hiện tại vẫn được gửi xuống STM32
+    # mỗi 5 phút để cập nhật đồng hồ của bộ sạc.
+    on_time:
+      - seconds: 0
+        minutes: /5
+        then:
+          - script.execute: send_time_to_stm32
 
 interval:
   # Chỉ gửi trạng thái Wi-Fi sau khi ổn định 3 giây. Việc debounce tránh các
