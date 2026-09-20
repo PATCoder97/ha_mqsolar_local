@@ -10,13 +10,13 @@ esphome:
   name: ${device_name}
   friendly_name: ${friendly_name}
   comment: "ESPHome replacement for MPPT_WIFI_0905_v2.3.3"
+  includes:
+    - <ESP8266WiFi.h>
   on_boot:
     priority: -100
     then:
       - delay: 2s
-      - uart.write:
-          id: charger_uart
-          data: "CFG_GET|\n"
+      - script.execute: request_charger_config
 
 esp8266:
   board: esp01_1m
@@ -80,6 +80,45 @@ globals:
     initial_value: "0.0"
 
 script:
+  - id: request_charger_config
+    mode: restart
+    then:
+      - lambda: |-
+          id(charger_config_ready) = false;
+      - repeat:
+          count: 3
+          then:
+            - if:
+                condition:
+                  lambda: return !id(charger_config_ready);
+                then:
+                  - uart.write:
+                      id: charger_uart
+                      data: "CFG_GET|\n"
+                  - delay: 1s
+      - if:
+          condition:
+            lambda: return !id(charger_config_ready);
+          then:
+            - lambda: |-
+                ESP_LOGE("mqsolar", "Không đọc được CFG_R sau 3 lần thử");
+
+  - id: send_time_to_stm32
+    mode: restart
+    then:
+      - lambda: |-
+          const auto now = id(network_time).now();
+          if (!now.is_valid()) {
+            ESP_LOGW("mqsolar", "Chưa có thời gian SNTP hợp lệ; không gửi xuống STM32");
+            return;
+          }
+
+          char frame[16];
+          // Firmware gốc dùng Serial.print ở đây, không thêm CR/LF. Frame
+          // WIFI định kỳ kế tiếp sẽ kết thúc chuỗi UART bằng CR/LF.
+          snprintf(frame, sizeof(frame), "TIME|%02d|%02d|", now.hour, now.minute);
+          id(charger_uart).write_str(frame);
+
   # Chỉ gửi khi STM32 đã trả về CFG_R và các giá trị còn trong giới hạn
   # mà chính bộ sạc công bố.
   - id: write_charger_config
@@ -88,7 +127,7 @@ script:
       - lambda: |-
           if (!id(charger_config_ready)) {
             ESP_LOGW("mqsolar", "Chưa có CFG_R; yêu cầu đọc cấu hình trước khi ghi");
-            id(charger_uart).write_str("CFG_GET|\n");
+            id(request_charger_config).execute();
             return;
           }
           if (id(charger_mode_value) < 0 || id(charger_mode_value) > 2 ||
@@ -110,9 +149,7 @@ script:
           id(charger_uart).write_str(frame);
           ESP_LOGI("mqsolar", "Đã gửi cấu hình mới cho STM32");
       - delay: 500ms
-      - uart.write:
-          id: charger_uart
-          data: "CFG_GET|\n"
+      - script.execute: request_charger_config
 
 uart:
   id: charger_uart
@@ -223,7 +260,7 @@ uart:
           // bat_current_x1000|temperature|today_kwh_x1000|
           // total_kwh_x1000|status
           // Ví dụ: 0|0|1688|0|26|0|0|4 = pin 16.88 V, 26 °C và
-          // trạng thái không hợp lệ 4. Theo firmware gốc, CHARGING phải là 1.
+          // trạng thái NIGHT. CHARGING là 1.
           if (fields.size() != 8) {
             ESP_LOGW("mqsolar", "Bỏ qua frame UART không đúng 8 trường: %s", line.c_str());
             return;
@@ -249,9 +286,9 @@ uart:
             pv_a = 0.0f;
           }
           const int status = lroundf(value[7]);
-          // Enum của firmware gốc là -3..2, không phải 0..5.
+          // Các trạng thái sạc chính dùng -3..2; STM32 dùng riêng mã 4 cho NIGHT.
           static const char *const status_names[] = {
-            "FAULT_LOW", "FAULT_HIGH", "OFF", "IDLE", "CHARGING", "FULL"
+            "Low voltage fault", "High voltage fault", "Off", "Idle", "Charging", "Full"
           };
 
           // Firmware gốc cộng các mẫu trong khoảng 1 giây, lấy trung bình bốn
@@ -291,7 +328,9 @@ uart:
           id(energy_today).publish_state(value[5] / 1000.0f);
           id(energy_total).publish_state(value[6] / 1000.0f);
           id(charger_temperature).publish_state(value[4]);
-          if (status >= -3 && status <= 2) {
+          if (status == 4) {
+            id(charger_status).publish_state("Night");
+          } else if (status >= -3 && status <= 2) {
             id(charger_status).publish_state(status_names[status + 3]);
           } else {
             id(charger_status).publish_state(std::string("UNKNOWN_") + to_string(status));
@@ -423,7 +462,7 @@ number:
           if (!id(charger_config_ready) || x > id(charger_current_limit)) {
             ESP_LOGW("mqsolar", "Dòng %.2f A vượt giới hạn hoặc chưa đọc CFG_R", x);
             id(max_charging_current).publish_state(id(charger_current_value));
-            id(charger_uart).write_str("CFG_GET|\n");
+            id(request_charger_config).execute();
             return;
           }
           id(charger_current_value) = x;
@@ -446,7 +485,7 @@ number:
           if (!id(charger_config_ready) || x > id(charger_voltage_limit)) {
             ESP_LOGW("mqsolar", "Điện áp %.2f V vượt giới hạn hoặc chưa đọc CFG_R", x);
             id(max_charging_voltage).publish_state(id(charger_voltage_value));
-            id(charger_uart).write_str("CFG_GET|\n");
+            id(request_charger_config).execute();
             return;
           }
           id(charger_voltage_value) = x;
@@ -532,9 +571,7 @@ button:
     icon: mdi:cog-refresh
     entity_category: config
     on_press:
-      - uart.write:
-          id: charger_uart
-          data: "CFG_GET|\n"
+      - script.execute: request_charger_config
 
   - platform: template
     name: "Khởi động lại bộ sạc"
@@ -554,19 +591,49 @@ time:
   - platform: sntp
     id: network_time
     timezone: Asia/Ho_Chi_Minh
+    on_time_sync:
+      then:
+        - script.execute: send_time_to_stm32
     on_time:
       - seconds: 0
         minutes: /5
         then:
-          - uart.write:
-              id: charger_uart
-              data: !lambda |-
-                char frame[16];
-                snprintf(frame, sizeof(frame), "TIME|%02d|%02d|\n", id(network_time).now().hour,
-                         id(network_time).now().minute);
-                return std::vector<uint8_t>(frame, frame + strlen(frame));
+          - script.execute: send_time_to_stm32
 
 interval:
+  # Firmware gốc kiểm tra Wi-Fi mỗi giây và dùng Serial.println, tương đương
+  # một frame kết thúc bằng CR/LF. STM32 dùng frame này như heartbeat Wi-Fi.
+  - interval: 1s
+    then:
+      - lambda: |-
+          const char *frame = nullptr;
+          switch (WiFi.status()) {
+            case WL_NO_SSID_AVAIL:
+              frame = "WIFI|NO_SSID_AVAIL\r\n";
+              break;
+            case WL_SCAN_COMPLETED:
+              frame = "WIFI|SCAN_COMPLETED\r\n";
+              break;
+            case WL_CONNECTED:
+              frame = "WIFI|CONNECTED\r\n";
+              break;
+            case WL_CONNECT_FAILED:
+              frame = "WIFI|CONNECT_FAILED\r\n";
+              break;
+            case WL_CONNECTION_LOST:
+              frame = "WIFI|CONNECTION_LOST\r\n";
+              break;
+            case WL_DISCONNECTED:
+              frame = "WIFI|DISCONNECTED\r\n";
+              break;
+            default:
+              // BIN gốc không gửi frame WIFI cho trạng thái ngoài bảng trên.
+              break;
+          }
+          if (frame != nullptr) {
+            id(charger_uart).write_str(frame);
+          }
+
   - interval: 5s
     then:
       - lambda: |-

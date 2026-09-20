@@ -18,6 +18,10 @@ MQTT_CHARGER_FIELDS = {
 
 STATUS_TEXT_MAP = {
     "CHARGING": "Charging",
+    "FULL": "Full",
+    "IDLE": "Idle",
+    "OFF": "Off",
+    "NIGHT": "Night",
     "UNKNOWN": "Not charging",
     "FAULT_LOW": "Low voltage fault",
     "FAULT_HIGH": "High voltage fault",

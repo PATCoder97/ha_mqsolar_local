@@ -72,6 +72,10 @@ class ProtocolTest(unittest.TestCase):
 
     def test_normalize_status_text(self) -> None:
         self.assertEqual(normalize_status_text("CHARGING"), "Charging")
+        self.assertEqual(normalize_status_text("FULL"), "Full")
+        self.assertEqual(normalize_status_text("IDLE"), "Idle")
+        self.assertEqual(normalize_status_text("OFF"), "Off")
+        self.assertEqual(normalize_status_text("NIGHT"), "Night")
         self.assertEqual(normalize_status_text("UNKNOWN"), "Not charging")
         self.assertEqual(normalize_status_text("FAULT_LOW"), "Low voltage fault")
         self.assertEqual(normalize_status_text("FAULT_HIGH"), "High voltage fault")
