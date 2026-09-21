@@ -261,9 +261,6 @@ uart:
               id(charging_current_limit).publish_state(current_limit);
               id(charging_voltage_limit).publish_state(voltage_limit);
             }
-            if (fields.size() > 6) {
-              id(mcu_version).publish_state(fields[6]);
-            }
             return;
           }
 
@@ -507,11 +504,6 @@ text_sensor:
   - platform: template
     id: charger_status
     name: "Trạng thái bộ sạc"
-
-  - platform: template
-    id: mcu_version
-    name: "Phiên bản STM32"
-    entity_category: diagnostic
 
   - platform: template
     id: charger_config

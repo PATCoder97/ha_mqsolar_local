@@ -47,7 +47,6 @@
       "wifi_rssi": {"name": "Wi-Fi RSSI"},
       "wifi_ssid": {"name": "Wi-Fi SSID"},
       "esp_version": {"name": "Wi-Fi firmware"},
-      "stm32_version": {"name": "Controller firmware"},
       "wifi_ip": {"name": "IP address"},
       "mqtt_host": {"name": "MQTT host"},
       "mqtt_port": {"name": "MQTT port"},

@@ -21,6 +21,7 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -219,12 +220,6 @@ DIAGNOSTIC_SENSORS: tuple[MQSolarSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     MQSolarSensorDescription(
-        key="stm32Version",
-        translation_key="stm32_version",
-        status_key=True,
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    MQSolarSensorDescription(
         key="wifiIP",
         translation_key="wifi_ip",
         status_key=True,
@@ -258,6 +253,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up entities for one local device."""
     coordinator: MQSolarCoordinator = hass.data[DOMAIN][entry.entry_id]
+    device_id = coordinator.data["_device_id"]
+    entity_registry = er.async_get(hass)
+    legacy_entity_id = entity_registry.async_get_entity_id(
+        "sensor", DOMAIN, f"{device_id}_stm32Version"
+    )
+    if legacy_entity_id is not None:
+        entity_registry.async_remove(legacy_entity_id)
+
     measurements = (
         CHARGER_SENSORS if "charger" in coordinator.data else INVERTER_SENSORS
     )

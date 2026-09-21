@@ -47,7 +47,6 @@
       "wifi_rssi": {"name": "Cường độ Wi-Fi RSSI"},
       "wifi_ssid": {"name": "Tên mạng Wi-Fi"},
       "esp_version": {"name": "Firmware Wi-Fi"},
-      "stm32_version": {"name": "Firmware điều khiển"},
       "wifi_ip": {"name": "Địa chỉ IP"},
       "mqtt_host": {"name": "Máy chủ MQTT"},
       "mqtt_port": {"name": "Cổng MQTT"},

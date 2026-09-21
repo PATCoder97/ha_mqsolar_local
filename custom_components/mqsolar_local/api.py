@@ -68,8 +68,6 @@ class MQSolarLocalApi:
         status = await self._get_json(API_STATUS, timeout)
         if not status.get("deviceId"):
             raise MQSolarInvalidResponseError("Status response has no deviceId")
-        if not status.get("stm32Version") and status.get("mcu_ver") is not None:
-            status["stm32Version"] = status["mcu_ver"]
         self.status = status
         return status
 
